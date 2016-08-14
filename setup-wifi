@@ -9,6 +9,7 @@ sub formatNetwork($);
 sub formatNetworkWpa($$$);
 sub formatNetworkWep($$$);
 sub formatNetworkNone($$);
+sub run(@);
 
 my @configArr = (
   [ctrl_interface         => "/data/misc/wifi/sockets"],
@@ -39,6 +40,13 @@ sub main(@){
   for my $network(@networks){
     $wpaSupplicant .= "\n" . formatNetwork $network;
   }
+
+  my $tmpFile = "/tmp/setup-wifi-$config{device_name}-wpa_supplicant.conf";
+  open FH, "> $tmpFile" or die "Could not write $tmpFile: $!\n";
+  print FH $wpaSupplicant;
+  close FH;
+
+  run "adb", "push", $tmpFile, "/data/misc/wifi/wpa_supplicant.conf";
 }
 
 sub readWinfoNetworks(){
@@ -135,6 +143,11 @@ sub formatNetworkNone($$){
     . "\tpriority=$priority\n"
     . "}\n"
     ;
+}
+
+sub run(@){
+  print "@_\n";
+  system @_;
 }
 
 &main(@ARGV);
