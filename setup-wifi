@@ -4,16 +4,38 @@ use warnings;
 
 sub readWinfoNetworks();
 sub setNetworkPriorities(@);
+sub formatConfig();
 sub formatNetwork($);
 sub formatNetworkWpa($$$);
 sub formatNetworkWep($$$);
 sub formatNetworkNone($$);
+
+my @configArr = (
+  [ctrl_interface         => "/data/misc/wifi/sockets"],
+  [disable_scan_offload   => "1"],
+  [update_config          => "1"],
+  [device_name            => "cm_klte"],
+  [manufacturer           => "samsung"],
+  [model_name             => "SM-G900T"],
+  [model_number           => "SM-G900T"],
+  [serial_number          => "fca3d35b"],
+  [device_type            => "10-0050F204-5"],
+  [config_methods         => "physical_display virtual_push_button"],
+  [p2p_disabled           => "1"],
+  [external_sim           => "1"],
+);
+my @configKeys = map {$$_[0]} @configArr;
+my %config = map {$$_[0] => $$_[1]} @configArr;
 
 sub main(@){
   my @networks = readWinfoNetworks();
   @networks = setNetworkPriorities @networks;
 
   my $wpaSupplicant = "";
+  for my $key(@configKeys){
+    $wpaSupplicant .= "$key=$config{$key}\n";
+  }
+
   for my $network(@networks){
     $wpaSupplicant .= "\n" . formatNetwork $network;
   }
@@ -63,6 +85,14 @@ sub setNetworkPriorities(@){
   }
 
   return @networks;
+}
+
+sub formatConfig(){
+  my $format = "";
+  for my $key(@configKeys){
+    $format .= "$key=$config{$key}\n";
+  }
+  return $format;
 }
 
 sub formatNetwork($){
