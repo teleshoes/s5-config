@@ -1,0 +1,2 @@
+#!/system/bin/sh
+/system/bin/logwrapper /system/bin/sshd -f /etc/ssh/sshd_config
