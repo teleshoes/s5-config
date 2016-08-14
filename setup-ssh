@@ -30,6 +30,8 @@ sub main(@){
   run "adb", "shell", "cat $sshDir/*.pub > $sshDir/authorized_keys";
   run "adb", "pull", "$sshDir/wolke-s5.pub", "$ENV{HOME}/.ssh/wolke-s5.pub";
   run "cat $ENV{HOME}/.ssh/*.pub > $ENV{HOME}/.ssh/authorized_keys";
+
+  run "adb", "push", "CONFIG_FILES/%etc%ssh%sshd_config", "/etc/ssh/sshd_config";
 }
 
 sub run(@){
