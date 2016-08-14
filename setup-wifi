@@ -2,7 +2,33 @@
 use strict;
 use warnings;
 
+sub readWinfoNetworks();
+
 sub main(@){
+  my @networks = readWinfoNetworks();
+}
+
+sub readWinfoNetworks(){
+  my @networks;
+  my @ssids = sort split /\n/, `winfo --list-all`;
+  for my $ssidName(@ssids){
+    my $info = `winfo "$ssidName"`;
+    my $ssid = $1 if $info =~ /^ssid:(.*)$/m;
+    my $enc = $1 if $info =~ /^enc:(.*)$/m;
+    my $key = $1 if $info =~ /^key:(.*)$/m;
+    my $mode = $1 if $info =~ /^mode:(.*)$/m;
+    my $auto = $1 if $info =~ /^auto:(.*)$/m;
+    if($enc =~ /^(WPA|WEP|NONE)/i and $mode =~ /managed/i){
+      push @networks, {
+        ssid => $ssid,
+        enc  => $enc,
+        key  => $key,
+        auto => $auto,
+      };
+    }
+  }
+
+  return @networks;
 }
 
 &main(@ARGV);
