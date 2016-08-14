@@ -37,6 +37,9 @@ sub main(@){
 
   run "adb", "push", "CONFIG_FILES/%etc%init.d%08selinux", "/etc/init.d/08selinux";
   run "adb", "shell", "chmod", "755", "/etc/init.d/08selinux";
+
+  run "adb", "push", "CONFIG_FILES/%etc%init.d%99sshd", "/etc/init.d/99sshd";
+  run "adb", "shell", "chmod", "755", "/etc/init.d/99sshd";
 }
 
 sub run(@){
