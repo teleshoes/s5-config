@@ -1,0 +1,1 @@
+supolicy --live "allow sysinit self:capability setgid;allow sysinit system_data_file:file open;"
