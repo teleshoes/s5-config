@@ -2,7 +2,18 @@
 use strict;
 use warnings;
 
+sub run(@);
+
 sub main(@){
+  system "adb", "kill-server";
+  system "adb", "root";
+
+  system "adb", "remount";
+}
+
+sub run(@){
+  print "@_\n";
+  system @_;
 }
 
 &main(@ARGV);
