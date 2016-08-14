@@ -4,10 +4,19 @@ use warnings;
 
 sub readWinfoNetworks();
 sub setNetworkPriorities(@);
+sub formatNetwork($);
+sub formatNetworkWpa($$$);
+sub formatNetworkWep($$$);
+sub formatNetworkNone($$);
 
 sub main(@){
   my @networks = readWinfoNetworks();
   @networks = setNetworkPriorities @networks;
+
+  my $wpaSupplicant = "";
+  for my $network(@networks){
+    $wpaSupplicant .= "\n" . formatNetwork $network;
+  }
 }
 
 sub readWinfoNetworks(){
@@ -54,6 +63,48 @@ sub setNetworkPriorities(@){
   }
 
   return @networks;
+}
+
+sub formatNetwork($){
+  my $net = shift;
+  if($$net{enc} =~ /^WPA$/){
+    return formatNetworkWpa $$net{ssid}, $$net{key}, $$net{priority};
+  }elsif($$net{enc} =~ /^WEP$/){
+    return formatNetworkWep $$net{ssid}, $$net{key}, $$net{priority};
+  }elsif($$net{enc} =~ /^NONE$/){
+    return formatNetworkNone $$net{ssid}, $$net{priority};
+  }
+}
+
+sub formatNetworkWpa($$$){
+  my ($ssid, $psk, $priority) = @_;
+  return "network={\n"
+    . "\tssid=\"$ssid\"\n"
+    . "\tpsk=\"$psk\"\n"
+    . "\tkey_mgmt=WPA-PSK\n"
+    . "\tpriority=$priority\n"
+    . "}\n"
+    ;
+}
+sub formatNetworkWep($$$){
+  my ($ssid, $wepKey, $priority) = @_;
+  return "network={\n"
+    . "\tssid=\"$ssid\"\n"
+    . "\tkey_mgmt=NONE\n"
+    . "\tauth_alg=OPEN SHARED\n"
+    . "\twep_key0=$wepKey\n"
+    . "\tpriority=$priority\n"
+    . "}\n"
+    ;
+}
+sub formatNetworkNone($$){
+  my ($ssid, $priority) = @_;
+  return "network={\n"
+    . "\tssid=\"$ssid\"\n"
+    . "\tkey_mgmt=NONE\n"
+    . "\tpriority=$priority\n"
+    . "}\n"
+    ;
 }
 
 &main(@ARGV);
