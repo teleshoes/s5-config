@@ -18,6 +18,18 @@ sub main(@){
   run "adb", "shell", "/system/bin/ssh-keygen", "-t", "rsa", "-N", "''", "-f", "$sshDir/id_rsa";
   run "adb", "shell", "chmod", "600", "$sshDir/id_rsa",
   run "adb", "shell", "mv", "$sshDir/id_rsa.pub", "$sshDir/wolke-s5.pub",
+
+  my @files;
+
+  @files = glob "$ENV{HOME}/.ssh/*.pub";
+  for my $f(@files){
+    $f = `basename "$f"`;
+    chomp $f;
+    run "adb", "push", "$ENV{HOME}/.ssh/$f", "$sshDir/$f";
+  }
+  run "adb", "shell", "cat $sshDir/*.pub > $sshDir/authorized_keys";
+  run "adb", "pull", "$sshDir/wolke-s5.pub", "$ENV{HOME}/.ssh/wolke-s5.pub";
+  run "cat $ENV{HOME}/.ssh/*.pub > $ENV{HOME}/.ssh/authorized_keys";
 }
 
 sub run(@){
