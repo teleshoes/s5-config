@@ -6,7 +6,6 @@ sub copyConfigFile($;$);
 sub run(@);
 
 sub main(@){
-  system "adb", "kill-server";
   system "adb", "root";
 
   system "adb", "remount";
