@@ -40,6 +40,10 @@ sub main(@){
 
   run "adb", "push", "CONFIG_FILES/%etc%init.d%99sshd", "/etc/init.d/99sshd";
   run "adb", "shell", "chmod", "755", "/etc/init.d/99sshd";
+
+  run "adb", "shell", "mkdir", "-p", "/system/su.d";
+  run "adb", "push", "CONFIG_FILES/%system%su.d%99sshd_supolicy", "/system/su.d/99sshd_supolicy";
+  run "adb", "shell", "chmod", "755", "/system/su.d/99sshd_supolicy";
 }
 
 sub run(@){
