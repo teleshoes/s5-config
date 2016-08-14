@@ -1,0 +1,2 @@
+adb root
+adb shell setprop net.hostname `s5 --host`
