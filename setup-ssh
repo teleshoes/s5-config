@@ -32,6 +32,11 @@ sub main(@){
   run "cat $ENV{HOME}/.ssh/*.pub > $ENV{HOME}/.ssh/authorized_keys";
 
   run "adb", "push", "CONFIG_FILES/%etc%ssh%sshd_config", "/etc/ssh/sshd_config";
+
+  run "adb", "shell", "mkdir", "-p", "/etc/init.d";
+
+  run "adb", "push", "CONFIG_FILES/%etc%init.d%08selinux", "/etc/init.d/08selinux";
+  run "adb", "shell", "chmod", "755", "/etc/init.d/08selinux";
 }
 
 sub run(@){
