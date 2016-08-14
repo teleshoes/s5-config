@@ -46,7 +46,9 @@ sub main(@){
   print FH $wpaSupplicant;
   close FH;
 
+  run "adb", "shell", "svc wifi disable";
   run "adb", "push", $tmpFile, "/data/misc/wifi/wpa_supplicant.conf";
+  run "adb", "shell", "svc wifi enable";
 }
 
 sub readWinfoNetworks(){
