@@ -9,6 +9,15 @@ sub main(@){
   system "adb", "root";
 
   system "adb", "remount";
+
+  my $sshDir = "/data/ssh";
+  run "adb", "shell", "rm", "-rf", "$sshDir";
+  run "adb", "shell", "mkdir", "-p", "$sshDir/empty";
+  run "adb", "shell", "chmod", "700", "$sshDir";
+  run "adb", "shell", "chmod", "700", "/$sshDir/empty";
+  run "adb", "shell", "/system/bin/ssh-keygen", "-t", "rsa", "-N", "''", "-f", "$sshDir/id_rsa";
+  run "adb", "shell", "chmod", "600", "$sshDir/id_rsa",
+  run "adb", "shell", "mv", "$sshDir/id_rsa.pub", "$sshDir/wolke-s5.pub",
 }
 
 sub run(@){
