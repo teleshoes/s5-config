@@ -2,6 +2,7 @@
 use strict;
 use warnings;
 
+sub copyConfigFile($;$);
 sub run(@);
 
 sub main(@){
@@ -31,19 +32,28 @@ sub main(@){
   run "adb", "pull", "$sshDir/wolke-s5.pub", "$ENV{HOME}/.ssh/wolke-s5.pub";
   run "cat $ENV{HOME}/.ssh/*.pub > $ENV{HOME}/.ssh/authorized_keys";
 
-  run "adb", "push", "CONFIG_FILES/%etc%ssh%sshd_config", "/etc/ssh/sshd_config";
+  copyConfigFile "%etc%ssh%sshd_config";
 
-  run "adb", "shell", "mkdir", "-p", "/etc/init.d";
+  copyConfigFile "%etc%init.d%08selinux", "755";
+  copyConfigFile "%etc%init.d%99sshd", "755";
+  copyConfigFile "%system%su.d%99sshd_supolicy", "755";
+}
 
-  run "adb", "push", "CONFIG_FILES/%etc%init.d%08selinux", "/etc/init.d/08selinux";
-  run "adb", "shell", "chmod", "755", "/etc/init.d/08selinux";
+sub copyConfigFile($;$){
+  my ($configFile, $perms) = @_;
+  my $localFile = "CONFIG_FILES/$configFile";
 
-  run "adb", "push", "CONFIG_FILES/%etc%init.d%99sshd", "/etc/init.d/99sshd";
-  run "adb", "shell", "chmod", "755", "/etc/init.d/99sshd";
+  my $remoteFile = $configFile;
+  $remoteFile =~ s/%/\//g;
 
-  run "adb", "shell", "mkdir", "-p", "/system/su.d";
-  run "adb", "push", "CONFIG_FILES/%system%su.d%99sshd_supolicy", "/system/su.d/99sshd_supolicy";
-  run "adb", "shell", "chmod", "755", "/system/su.d/99sshd_supolicy";
+  my $remoteDir = $remoteFile;
+  $remoteDir =~ s/\/[^\/]*$//;
+
+  run "adb", "shell", "mkdir", "-p", $remoteDir;
+  run "adb", "push", $localFile, $remoteFile;
+  if(defined $perms){
+    run "adb", "shell", "chmod", $perms, $remoteFile;
+  }
 }
 
 sub run(@){
