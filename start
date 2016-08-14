@@ -36,3 +36,7 @@
 #    -disable debugging notify
 #  maybe: sudo gpasswd -a wolke plugdev
 #  maybe: cp udev rules
+
+./setup-hostname
+./setup-ssh
+./setup-wifi
