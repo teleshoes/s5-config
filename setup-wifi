@@ -3,9 +3,11 @@ use strict;
 use warnings;
 
 sub readWinfoNetworks();
+sub setNetworkPriorities(@);
 
 sub main(@){
   my @networks = readWinfoNetworks();
+  @networks = setNetworkPriorities @networks;
 }
 
 sub readWinfoNetworks(){
@@ -26,6 +28,29 @@ sub readWinfoNetworks(){
         auto => $auto,
       };
     }
+  }
+
+  return @networks;
+}
+
+sub setNetworkPriorities(@){
+  my @networks = @_;
+
+  my $count = @networks;
+
+  @networks = sort {
+    my $aAuto = $$a{auto} =~ /^\d+$/ ? $$a{auto} : $count;
+    my $bAuto = $$b{auto} =~ /^\d+$/ ? $$b{auto} : $count;
+
+    return $aAuto <=> $bAuto || $$a{ssid} cmp $$b{ssid};
+  } @networks;
+
+  #higher number is higher priority
+  @networks = reverse @networks;
+
+  my $i=1;
+  for my $network(@networks){
+    $$network{priority} = $i++;
   }
 
   return @networks;
