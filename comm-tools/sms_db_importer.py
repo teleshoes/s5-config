@@ -135,7 +135,7 @@ def main():
         dirName = mms.getMsgDirName()
         msgDir = args.mms_msg_dir + "/" + dirName
         if not os.path.isdir(msgDir):
-          print "error reading MMS(" + str(msgDir) + ":\n" + str(mms)
+          print "ERROR: missing MMS message dir=" + str(msgDir) + "\n" + str(mms)
           quit(1)
 
         oldChecksum = mms.checksum
@@ -143,8 +143,7 @@ def main():
         newChecksum = mms.checksum
 
         if oldChecksum != newChecksum:
-          print "mismatched checksum for MMS message"
-          print mms
+          print "ERROR: mismatched checksum for MMS message\n" + str(mms)
           quit(1)
 
         attFilePrefix = dirName
@@ -158,11 +157,11 @@ def main():
 
           if os.path.isfile(destFile):
             if not filecmp.cmp(srcFile, destFile, shallow=False):
-              print "ERROR: attFile exists in parts dir already and is different"
+              print "ERROR: attFile exists in parts dir and is different\n" + str(mms)
               quit(1)
 
           if 0 != os.system("cp -ar --reflink '" + srcFile + "' '" + destFile + "'"):
-            print "failed to copy " + str(srcFile)
+            print "ERROR: failed to copy " + str(srcFile)
             quit(1)
           mms.attFiles[filename] = destFile
           attFileCount += 1
@@ -212,7 +211,7 @@ class Text:
     return self.direction.name
   def assertDirectionValid(self):
     if self.direction not in SMS_DIR:
-      print "invalid SMS direction: " + str(self.direction)
+      print "ERROR: invalid SMS direction=" + str(self.direction)
       quit(1)
   def __unicode__(self):
     return self.toCsv()
@@ -272,7 +271,7 @@ class MMS:
         filename = p.filepath
         filename = re.sub('^' + REMOTE_MMS_PARTS_REGEX + '/', '', filename)
         if "/" in filename:
-          print "filename contains path sep '/': " + filename
+          print "ERROR: filename contains path sep '/'\n" + filename
           quit(1)
         prefixRegex = re.compile(''
           + r'^\d+_'
@@ -285,7 +284,7 @@ class MMS:
         localFilepath = self.mms_parts_dir + "/" + filename
         self.attFiles[attName] = localFilepath
       else:
-        print "invalid MMS part: " + str(p)
+        print "ERROR: invalid MMS part=" + str(p)
         quit(1)
     if self.body == None:
       self.body = ""
@@ -300,7 +299,7 @@ class MMS:
       md5.update("\n" + attName + "\n")
       filepath = self.attFiles[attName]
       if not os.path.isfile(filepath):
-        print "missing att file: " + filepath
+        print "ERROR: missing att file=" + filepath
         quit(1)
       f = open(filepath, 'r')
       md5.update(f.read())
@@ -348,7 +347,7 @@ class MMS:
     return self.direction.name
   def assertDirectionValid(self):
     if self.direction not in MMS_DIR:
-      print "invalid MMS direction: " + str(self.direction)
+      print "ERROR: invalid MMS direction=" + str(self.direction)
       quit(1)
   def __unicode__(self):
     return self.getInfo()
@@ -375,7 +374,7 @@ def readTextsFromCSV(csvFile):
     csvContents = csvFile.read()
     csvFile.close()
   except IOError:
-    print "could not read csv file: " + str(csvFile)
+    print "ERROR: could not read csv file=" + str(csvFile)
     quit(1)
 
   texts = []
@@ -391,7 +390,7 @@ def readTextsFromCSV(csvFile):
   for row in csvContents.splitlines():
     m = rowRegex.match(row)
     if not m or len(m.groups()) != 7:
-      print "invalid SMS CSV line: " + row
+      print "ERROR: invalid SMS CSV line=" + row
       quit(1)
     number           = m.group(1)
     date_millis      = m.group(2)
@@ -450,7 +449,7 @@ def readTextsFromAndroid(db_file):
       error = True
 
     if error:
-      print "INVALID SMS DIRECTION TYPE: " + str(dir_type) + "\n" + str(row)
+      print "ERROR: INVALID SMS DIRECTION TYPE=" + str(dir_type) + "\n" + str(row)
       quit(1)
     elif direction != None:
       body = row[4]
@@ -472,7 +471,7 @@ def readMMSFromMsgDir(mmsMsgDir, mms_parts_dir):
   for msgDir in sorted(msgDirs):
     msgInfo = msgDir + "/" + "info"
     if not os.path.isfile(msgInfo):
-      print "missing \"info\" file for " + msgDir
+      print "ERROR: missing \"info\" file for msg dir=" + msgDir
       quit(1)
     f = open(msgInfo)
     infoLines = f.read().splitlines()
@@ -480,7 +479,7 @@ def readMMSFromMsgDir(mmsMsgDir, mms_parts_dir):
     for infoLine in infoLines:
       m = keyValRegex.match(infoLine)
       if not m or len(m.groups()) != 2:
-        print "malformed info line: " + infoLine
+        print "ERROR: malformed mms info line=" + infoLine
         quit(1)
       key = m.group(1)
       val = m.group(2)
@@ -496,7 +495,7 @@ def readMMSFromMsgDir(mmsMsgDir, mms_parts_dir):
         mms.date_sent_millis = long(val)
       elif key == "dir":
         if val not in MMS_DIR.__members__:
-          print "invalid MMS direction: " + str(val)
+          print "ERROR: invalid MMS direction=" + str(val)
           quit(1)
         mms.direction = MMS_DIR.__members__[val]
       elif key == "subject":
@@ -539,7 +538,7 @@ def readMMSFromAndroid(db_file, mms_parts_dir):
     elif dir_type_mms == 130:
       direction = MMS_DIR.NTF
     else:
-      print "INVALID MMS DIRECTION TYPE: " + str(dir_type_mms) + "\n" + str(row)
+      print "ERROR: INVALID MMS DIRECTION TYPE=" + str(dir_type_mms) + "\n" + str(row)
       quit(1)
 
     date_format = time.strftime("%Y-%m-%d %H:%M:%S",
@@ -571,7 +570,7 @@ def readMMSFromAndroid(db_file, mms_parts_dir):
       continue
 
     if msg_id not in msgs:
-      print "INVALID MESSAGE ID FOR MMS PART: " + str(row)
+      print "ERROR: INVALID MESSAGE ID FOR MMS PART=" + str(row)
       quit(1)
     msg = msgs[msg_id]
 
@@ -606,13 +605,13 @@ def readMMSFromAndroid(db_file, mms_parts_dir):
       next
 
     if msg_id not in msgs:
-      print "INVALID MESSAGE ID FOR ADDRESS: " + str(row)
+      print "ERROR: INVALID MESSAGE ID FOR ADDRESS\n" + str(row)
       quit(1)
     msg = msgs[msg_id]
 
     if is_sender_addr:
       if msg.from_number != None:
-        print "too many sender addresses" + str(row)
+        print "ERROR: too many sender addresses for address row\n" + str(row)
         quit(1)
       msg.from_number = cleanNumber(number)
     elif is_recipient_addr:
@@ -939,7 +938,7 @@ def guessContentType(filename, filepath):
     if re.match(r'^[a-z0-9]+/[a-z0-9\-.]+$', mimeType):
       return mimeType
     else:
-      print "unknown file type: " + filepath
+      print "ERROR: unknown file type=" + filepath
       quit(1)
 
   return contentType
