@@ -264,7 +264,7 @@ class MMS:
         pass
       elif p.body != None:
         if self.body != None:
-          print "multiple text parts found for mms: " + str(self)
+          print "WARNING: multiple text parts for mms (concatenating them)\n" + str(self)
           self.body += p.body
         self.body = p.body
       elif p.filepath != None:
@@ -601,7 +601,7 @@ def readMMSFromAndroid(db_file, mms_parts_dir):
     elif dir_type_addr == 151:
       is_recipient_addr = True
     else:
-      print "INVALID MMS ADDRESS DIRECTION: " + str(dir_type_addr) + "\n" + str(row)
+      print "WARNING: SKIPPING MSG, INVALID MMS ADDR DIR=" + str(dir_type_addr) + "\n" + str(row)
       next
 
     if msg_id not in msgs:
