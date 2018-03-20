@@ -442,7 +442,8 @@ def readTextsFromAndroid(db_file):
       #no message sent yet
       pass
     elif dir_type == 4: #MESSAGE_TYPE_OUTBOX (sending now)
-      error = True
+      print "WARNING: SKIPPING SMS FOR OUTBOX DIR TYPE=" + str(dir_type) + "\n" + str(row)
+      error = False
     elif dir_type == 0: #MESSAGE_TYPE_ALL
       error = True
     else:
