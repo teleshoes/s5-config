@@ -2,6 +2,8 @@
 use strict;
 use warnings;
 
+sub clearCacheRestartApp($);
+sub run(@);
 sub backup($);
 
 my $dir = "$ENV{HOME}/Code/s5";
@@ -15,6 +17,31 @@ sub main(@){
 
   backup "dcim-backup";
   backup "backup-comm";
+
+  clearCacheRestartApp('com.android.providers.media');
+  clearCacheRestartApp('com.android.gallery3d');
+
+  my $dirName = `adb shell readlink '/storage/sd-data'`;
+  chomp $dirName;
+  my $storage = "/storage/$dirName";
+  my $dcim = "$storage/DCIM";
+  run "adb shell am broadcast -a android.intent.action.MEDIA_MOUNTED -d file://$storage";
+  run "adb shell am broadcast -a android.intent.action.MEDIA_MOUNTED -d file://$dcim";
+  run "adb shell am broadcast -a android.intent.action.MEDIA_MOUNTED -d file://$storage";
+}
+
+sub clearCacheRestartApp($){
+  my ($app) = @_;
+  run "adb shell pm clear $app";
+  run "adb shell am force-stop $app";
+  run "adb shell pm disable $app";
+  run "adb shell pm clear $app";
+  run "adb shell pm enable $app";
+}
+
+sub run(@){
+  print "@_\n";
+  system @_;
 }
 
 sub backup($){
