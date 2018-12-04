@@ -2,6 +2,8 @@
 use strict;
 use warnings;
 
+my $ipmagicName = "s5";
+
 my $localDir = "$ENV{HOME}/Code/s5/backup/DCIM";
 my @backups = (
   [ $localDir, "/mnt/android-sdcard/DCIM/Camera", "backup_int" ],
@@ -36,7 +38,7 @@ sub dcimBackup($$$){
   die "remote $remoteDCIM does not exist\n" if not remoteDirExists $remoteDCIM;
   chdir $localDCIM;
   print "Getting md5sums of files in root of remote DCIM\n";
-  my @remoteMd5sums = `s5 -u root md5sum $remoteDCIM/*.* 2>/dev/null`;
+  my @remoteMd5sums = `ipmagic $ipmagicName -u root md5sum $remoteDCIM/*.* 2>/dev/null`;
 
   print "===all:\n" . join "", @remoteMd5sums;
   print "===\n\n";
@@ -62,11 +64,13 @@ sub dcimBackup($$$){
   print "===\n\n";
 
   if(@needsBackUp > 0){
+    my $host = `ipmagic $ipmagicName`;
+    chomp $host;
     my $now = `date +%Y-%m-%d_%s`;
     chomp $now;
     my $dir = "$localDCIM/${backupPrefix}_$now";
     system "mkdir -p $dir";
-    system "rsync -avP root@`s5`:$remoteDCIM/*.* $dir/";
+    system "rsync -avP root\@$host:$remoteDCIM/*.* $dir/";
     die "failed rsync backup\n" if $? != 0;
 
     print "updating local md5sums again and re-reorganizing remote\n";
@@ -110,7 +114,7 @@ sub reorganizeBackedUpRemotes($$$$$){
       my $cmd = join '', @$cmdChunk;
       my $count = @$cmdChunk;
       print "\n\n#running $count mv commands\n$cmd";
-      system "s5", "-u", "root", $cmd;
+      system "ipmagic", $ipmagicName, "-u", "root", $cmd;
       die "failed reorganizing remotes\n" if $? != 0;
     }
   }
@@ -184,7 +188,8 @@ sub updateMd5sums($){
 
 sub remoteDirExists($){
   my ($dir) = @_;
-  my $out = `s5 -u root 'if [ -d "$dir" ]; then echo exists; fi' 2>/dev/null`;
+  my $testCmd = "if [ -d \"$dir\" ]; then echo exists; fi";
+  my $out = `ipmagic $ipmagicName -u root '$testCmd' 2>/dev/null`;
   if($out =~ /^exists$/){
     return 1;
   }else{
