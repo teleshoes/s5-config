@@ -1,29 +1,33 @@
 #**heimdall**
-#  sudo apt-get install heimdall-flash heimdall-flash-frontend
-#  #download twrp klte recover image
-#  heimdall-frontend
-#  #the cmdline doesnt work for some reason
-#  -voldn + home + power => download-mode
-#  -connect usb
-#  -download the PIT to a localfile
-#  -heimdall-frontent => flasher
-#  -select the pit
-#  -click Add partition
-#  -change to RECOVERY
-#  -select twrp recovery image
-#  -no reboot
-#  -start
-#  -power off phone manually
+#  1) https://dl.twrp.me/klte/
+#     # mv ~/Downloads/twrp-*-klte.img ~/Code/s5/flashing/
+#  2) voldn + home + power => download-mode
+#  3) plug USB
+#  4) use heimdall git=3b4f34e
+#  5) test heimdall
+#     # cd ~/Code/s5/Heimdall/bin
+#     # ./heimdaill print-pit --no-reboot
+#  6) unplug USB, plug USB
+#  7) install TWRP
+#     # ./heimdall flash --RECOVERY ../../flashing/twrp-*-klte.img --no-reboot
+#  8) unplug usb
+#  9) hold volup + home, turn off phone (hold power)
+#  10) volup + home + power => recovery-mode
 
 #**install CM**
-#  -copy CM zip to uSD card, put in phone (copy GApps as well)
+#  -get lineage, opengapps, and addonsu, copy to uSD card
+#     -addonsu == lineage version
+#     -opengapps arch=arm, android version matches lineage, variant=full
+#  -copy gapps-config.txt to uSD card (include hangouts, maps, street)
 #  -volup + home + power => recovery-mode
 #  -should say TWRP
 #  -backup to uSD card
-#  -wipe normal
-#  -wipe data
-#  -install, select external_sd/cm.zip or sd_card/cm.zip
-#  -(install GApps now as well)
+#  -wipe: normal, swipe to factory reset
+#  -wipe: Format Data
+#  -wipe: Advanced Wipe => cache + system
+#  -install lineage
+#  -install GApps
+#  -install addonsu
 #  -reboot phone
 
 #**enable devmode**
