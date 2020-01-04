@@ -58,7 +58,7 @@ sub main(@){
       }
       if(defined $latestRepoEntry and $$entry{date} <= $$latestRepoEntry{date}){
         my ($newLine, $oldLine) = ($$entry{line}, $$latestRepoEntry{line});
-        die "new entry older than last repo entry:\nnew: ${newLine}old: ${oldLine}";
+        print STDERR "new entry older than last repo entry:\nnew: ${newLine}old: ${oldLine}";
       }
 
       my $sortKey = getSortKey $type, $entry;
