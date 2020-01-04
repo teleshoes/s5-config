@@ -10,8 +10,6 @@ my @backups = (
   [ $localDir, "/mnt/sd-data/DCIM/Camera",        "backup_sd-data" ],
   [ $localDir, "/sdcard/Pictures/Screenshots",    "backup_screenshots" ],
   [ $localDir, "/sdcard/Movies/Screencasts",      "backup_screencasts" ],
-# [ $localDir, "/mnt/sd-fat/DCIM/Camera",         "backup_sd-fat" ],
-# [ $localDir, "/mnt/sd-deb/DCIM/Camera",         "backup_sd-deb" ],
 );
 
 my @filetypes = qw(jpg jpeg png mp4);
