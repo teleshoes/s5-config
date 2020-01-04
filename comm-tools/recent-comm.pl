@@ -116,7 +116,8 @@ sub parseCallFile($){
   while(my $line = <FH>){
     my $dateFmtRe = '\\d\\d\\d\\d-\\d\\d-\\d\\d \\d\\d:\\d\\d:\\d\\d';
     if($line !~ /^([0-9+]+),(\d+),(OUT|INC|MIS|REJ|BLK),($dateFmtRe),\s*(-?)(\d+)h\s*(\d+)m\s(\d+)s$/){
-      die "invalid call line: $line";
+      print STDERR "WARNING: invalid call line: $line";
+      next;
     }
     my ($num, $date, $dir, $dateFmt, $durSign, $durH, $durM, $durS) =
       ($1, $2, $3, $4, $5, $6, $7, $8);
