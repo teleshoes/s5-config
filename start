@@ -6,7 +6,7 @@
 #  4) use heimdall git=3b4f34e
 #  5) test heimdall
 #     # cd ~/Code/s5/Heimdall/bin
-#     # ./heimdaill print-pit --no-reboot
+#     # ./heimdall print-pit --no-reboot
 #  6) unplug USB, plug USB
 #  7) install TWRP
 #     # ./heimdall flash --RECOVERY ../../flashing/twrp-*-klte.img --no-reboot
