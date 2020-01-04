@@ -46,7 +46,7 @@ my $CMD_CONTACTS_DB_EXTRACT = "$COMM_TOOLS_DIR/contacts-db-extract";
 my $CMD_CONTACTS_SORT = "$COMM_TOOLS_DIR/contacts-sort.pl";
 my $CMD_CONTACTS_SYMLINKS = "$COMM_TOOLS_DIR/contacts-symlinks.pl";
 
-my $DATA_MOUNTPOINT = "/mnt/android-data";
+my $DATA_MOUNTPOINT = "/data";
 my $MMSSMS_DB_REMOTE_FILE_SUFFIX = "com.android.providers.telephony/databases/mmssms.db";
 my $CALLLOG_DB_REMOTE_FILE_SUFFIX = "com.android.providers.contacts/databases/calllog.db";
 my $CONTACTS_DB_REMOTE_FILE_SUFFIX = "com.android.providers.contacts/databases/contacts2.db",
