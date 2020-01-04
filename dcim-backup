@@ -4,10 +4,12 @@ use warnings;
 
 my $ipmagicName = "s5";
 
+my $SD_FAT_UUID = "8D67-6AFB";
+
 my $localDir = "$ENV{HOME}/Code/s5/backup/DCIM";
 my @backups = (
   [ $localDir, "/sdcard/DCIM/Camera",                    "backup_int" ],
-  [ $localDir, "/mnt/sd-data/DCIM/Camera",               "backup_sd-data" ],
+  [ $localDir, "/storage/$SD_FAT_UUID/DCIM/Camera",      "backup_sd-fat" ],
   [ $localDir, "/sdcard/Pictures/Screenshots",           "backup_screenshots" ],
   [ $localDir, "/sdcard/Movies/Screencasts",             "backup_screencasts" ],
 );
