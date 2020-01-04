@@ -109,7 +109,7 @@ sub reorganizeBackedUpRemotes($$$$$){
   if(@reorganizeCmds > 0){
 
     my @cmdChunks;
-    push @cmdChunks, [ splice @reorganizeCmds, 0, 100 ] while @reorganizeCmds;
+    push @cmdChunks, [ splice @reorganizeCmds, 0, 10 ] while @reorganizeCmds;
     for my $cmdChunk(@cmdChunks){
       my $cmd = join '', @$cmdChunk;
       my $count = @$cmdChunk;
