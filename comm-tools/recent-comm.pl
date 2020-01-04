@@ -72,7 +72,8 @@ sub parseRepoFileFlat($$){
   }
   my @nums = keys %$entries;
   if(@nums == 0){
-    die "empty repo file: $file\n";
+    print STDERR "WARNING: empty repo file: $file\n";
+    return ();
   }elsif(@nums > 1){
     die "multiple contact numbers in a single repo file: $file\n";
   }
@@ -86,7 +87,8 @@ sub parseSmsFile($){
   while(my $line = <FH>){
     my $dateFmtRe = '\\d\\d\\d\\d-\\d\\d-\\d\\d \\d\\d:\\d\\d:\\d\\d';
     if($line !~ /^([0-9+]+),(\d+),(\d+),(S|M),(OUT|INC),($dateFmtRe),"(.*)"$/){
-      die "invalid sms line: $line";
+      print STDERR "WARNING: invalid sms line: $line";
+      next;
     }
     my ($num, $date, $dateSent, $source, $dir, $dateFmt, $body) =
       ($1, $2, $3, $4, $5, $6, $7);
