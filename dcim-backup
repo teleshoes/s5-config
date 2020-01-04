@@ -5,11 +5,13 @@ use warnings;
 my $ipmagicName = "s5";
 
 my $SD_FAT_UUID = "8D67-6AFB";
+my $SNAP_APP_DIR = "Android/data/org.lineageos.snap/files";
 
 my $localDir = "$ENV{HOME}/Code/s5/backup/DCIM";
 my @backups = (
   [ $localDir, "/sdcard/DCIM/Camera",                    "backup_int" ],
   [ $localDir, "/sdcard/DCIM/100ANDRO",                  "backup_int" ],
+  [ $localDir, "/sdcard/$SNAP_APP_DIR",                  "backup_int-snap" ],
   [ $localDir, "/storage/$SD_FAT_UUID/DCIM/Camera",      "backup_sd-fat" ],
   [ $localDir, "/sdcard/Pictures/Screenshots",           "backup_screenshots" ],
   [ $localDir, "/sdcard/Movies/Screencasts",             "backup_screencasts" ],
