@@ -142,7 +142,7 @@ sub main(@){
     $dirName =~ s/^$MMS_MSG_REPO\/?//;
     if($dirName =~ /\// or not -d "$MMS_MSG_REPO/$dirName"){
       die "error parsing mms dir: $msgDir\n";
-    }elsif($dirName =~ /^(\d{13})_/){
+    }elsif($dirName =~ /^(\d+)_/){
       my $dateMillis = $1;
       my $dateSex = int($dateMillis/1000);
       tryrunQuiet "touch", $msgDir, "-d", "\@$dateSex";
