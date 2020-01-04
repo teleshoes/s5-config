@@ -6,10 +6,10 @@ my $ipmagicName = "s5";
 
 my $localDir = "$ENV{HOME}/Code/s5/backup/DCIM";
 my @backups = (
-  [ $localDir, "/sdcard/DCIM/Camera",             "backup_int" ],
-  [ $localDir, "/mnt/sd-data/DCIM/Camera",        "backup_sd-data" ],
-  [ $localDir, "/sdcard/Pictures/Screenshots",    "backup_screenshots" ],
-  [ $localDir, "/sdcard/Movies/Screencasts",      "backup_screencasts" ],
+  [ $localDir, "/sdcard/DCIM/Camera",                    "backup_int" ],
+  [ $localDir, "/mnt/sd-data/DCIM/Camera",               "backup_sd-data" ],
+  [ $localDir, "/sdcard/Pictures/Screenshots",           "backup_screenshots" ],
+  [ $localDir, "/sdcard/Movies/Screencasts",             "backup_screencasts" ],
 );
 
 my @filetypes = qw(jpg jpeg png mp4);
