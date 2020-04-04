@@ -19,7 +19,7 @@ my @backups = (
   [ $localDir, "/sdcard/Movies/Screencasts",             "screencasts" ],
 );
 
-my @filetypes = qw(jpg jpeg png mp4);
+my @filetypes = qw(jpg jpeg png gif mp4);
 
 sub dcimBackup($$$);
 sub reorganizeBackedUpRemotes($$$$$);
