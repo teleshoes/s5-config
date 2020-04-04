@@ -42,7 +42,7 @@ sub dcimBackup($$$){
   die "remote $remoteDCIM does not exist\n" if not remoteDirExists $remoteDCIM;
   chdir $localDCIM;
   print "Getting md5sums of files in root of remote DCIM\n";
-  my @remoteMd5sums = `ipmagic $ipmagicName -u root md5sum $remoteDCIM/*.* 2>/dev/null`;
+  my @remoteMd5sums = `ipmagic $ipmagicName -u root -s md5sum $remoteDCIM/*.* 2>/dev/null`;
 
   print "===all:\n" . join "", @remoteMd5sums;
   print "===\n\n";
@@ -116,7 +116,7 @@ sub reorganizeBackedUpRemotes($$$$$){
   if(@mvCmds > 0){
     for my $dir(sort keys %dirsToMake){
       my $mkdirCmd = "mkdir -p $dir";
-      system "ipmagic", $ipmagicName, "-u", "root", $mkdirCmd;
+      system "ipmagic", $ipmagicName, "-u", "root", "-s", $mkdirCmd;
       die "failed to create remote dir $dir\n" if $? != 0;
     }
 
@@ -128,7 +128,7 @@ sub reorganizeBackedUpRemotes($$$$$){
       my $count = @$mvChunk;
       print "\n\n#running $count mv commands:\n  $cmdToRun\n";
 
-      system "ipmagic", $ipmagicName, "-u", "root", $cmdToRun;
+      system "ipmagic", $ipmagicName, "-u", "root", "-s", $cmdToRun;
       my $exitCode = $?;
       die "failed reorganizing remotes (exit=$exitCode)\n" if $exitCode != 0;
     }
@@ -204,7 +204,7 @@ sub updateMd5sums($){
 sub remoteDirExists($){
   my ($dir) = @_;
   my $testCmd = "if [ -d \"$dir\" ]; then echo exists; fi";
-  my $out = `ipmagic $ipmagicName -u root '$testCmd' 2>/dev/null`;
+  my $out = `ipmagic $ipmagicName -u root -s '$testCmd' 2>/dev/null`;
   if($out =~ /^exists$/){
     return 1;
   }else{
