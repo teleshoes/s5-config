@@ -4,6 +4,7 @@ use warnings;
 
 my $ipmagicName = "s5";
 
+sub broadcastMediaMounted($);
 sub clearCacheRestartApp($);
 sub run(@);
 sub backup($);
@@ -23,22 +24,27 @@ sub main(@){
   clearCacheRestartApp('com.android.providers.media');
   clearCacheRestartApp('com.android.gallery3d');
 
-  my $dirName = `adb shell readlink '/storage/sd-data'`;
-  chomp $dirName;
-  my $storage = "/storage/$dirName";
-  my $dcim = "$storage/DCIM";
-  run "adb shell am broadcast -a android.intent.action.MEDIA_MOUNTED -d file://$storage";
-  run "adb shell am broadcast -a android.intent.action.MEDIA_MOUNTED -d file://$dcim";
-  run "adb shell am broadcast -a android.intent.action.MEDIA_MOUNTED -d file://$storage";
+  my @sdcardDirs = `ipmagic $ipmagicName -s ls -d /storage/*-*`;
+  for my $sdcardDir(@sdcardDirs){
+    chomp $sdcardDir;
+    broadcastMediaMounted("$sdcardDir");
+    broadcastMediaMounted("$sdcardDir/DCIM");
+    broadcastMediaMounted("$sdcardDir");
+  }
+}
+
+sub broadcastMediaMounted($){
+  my ($dir) = @_;
+  run "ipmagic $ipmagicName -s am broadcast -a android.intent.action.MEDIA_MOUNTED -d file://$dir";
 }
 
 sub clearCacheRestartApp($){
   my ($app) = @_;
-  run "adb shell pm clear $app";
-  run "adb shell am force-stop $app";
-  run "adb shell pm disable $app";
-  run "adb shell pm clear $app";
-  run "adb shell pm enable $app";
+  run "ipmagic $ipmagicName -s pm clear $app";
+  run "ipmagic $ipmagicName -s am force-stop $app";
+  run "ipmagic $ipmagicName -s pm disable $app";
+  run "ipmagic $ipmagicName -s pm clear $app";
+  run "ipmagic $ipmagicName -s pm enable $app";
 }
 
 sub run(@){
