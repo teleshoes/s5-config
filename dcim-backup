@@ -10,13 +10,13 @@ my $SNAP_APP_DIR = "Android/data/org.lineageos.snap/files";
 
 my $localDir = "$ENV{HOME}/Code/s5/backup/DCIM";
 my @backups = (
-  [ $localDir, "/sdcard/DCIM/Camera",                    "backup_int" ],
-  [ $localDir, "/sdcard/DCIM/100ANDRO",                  "backup_int" ],
-  [ $localDir, "/sdcard/$SNAP_APP_DIR",                  "backup_int-snap" ],
-  [ $localDir, "/storage/$SD_FAT_UUID/$SNAP_APP_DIR",    "backup_sd-snap" ],
-  [ $localDir, "/storage/$SD_FAT_UUID/DCIM/Camera",      "backup_sd-fat" ],
-  [ $localDir, "/sdcard/Pictures/Screenshots",           "backup_screenshots" ],
-  [ $localDir, "/sdcard/Movies/Screencasts",             "backup_screencasts" ],
+  [ $localDir, "/sdcard/DCIM/Camera",                    "int-cam" ],
+  [ $localDir, "/sdcard/DCIM/100ANDRO",                  "int-andro" ],
+  [ $localDir, "/sdcard/$SNAP_APP_DIR",                  "int-snap" ],
+  [ $localDir, "/storage/$SD_FAT_UUID/$SNAP_APP_DIR",    "sd-snap" ],
+  [ $localDir, "/storage/$SD_FAT_UUID/DCIM/Camera",      "sd-fat" ],
+  [ $localDir, "/sdcard/Pictures/Screenshots",           "screenshots" ],
+  [ $localDir, "/sdcard/Movies/Screencasts",             "screencasts" ],
 );
 
 my @filetypes = qw(jpg jpeg png mp4);
@@ -31,13 +31,13 @@ sub remoteDirExists($);
 
 sub main(@){
   for my $backup(@backups){
-    my ($localDCIM, $remoteDCIM, $backupPrefix) = @$backup;
-    dcimBackup($localDCIM, $remoteDCIM, $backupPrefix);
+    my ($localDCIM, $remoteDCIM, $backupSuffix) = @$backup;
+    dcimBackup($localDCIM, $remoteDCIM, $backupSuffix);
   }
 }
 
 sub dcimBackup($$$){
-  my ($localDCIM, $remoteDCIM, $backupPrefix) = @_;
+  my ($localDCIM, $remoteDCIM, $backupSuffix) = @_;
 
   die "local $localDCIM does not exist\n" if not -d $localDCIM;
   die "remote $remoteDCIM does not exist\n" if not remoteDirExists $remoteDCIM;
@@ -69,12 +69,13 @@ sub dcimBackup($$$){
   print "===\n\n";
 
   if(@needsBackUp > 0){
-    my $host = `ipmagic $ipmagicName`;
-    chomp $host;
     my $now = `date +%Y-%m-%d_%s`;
     chomp $now;
-    my $dir = "$localDCIM/${backupPrefix}_$now";
+    my $dir = "$localDCIM/backup_${now}_${backupSuffix}";
     system "mkdir -p $dir";
+    my $host = `ipmagic $ipmagicName`;
+    chomp $host;
+
     system "rsync -avP $user\@$host:$remoteDCIM/*.* $dir/";
     die "failed rsync backup\n" if $? != 0;
 
