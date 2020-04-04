@@ -12,7 +12,7 @@ my $localDir = "$ENV{HOME}/Code/s5/backup/DCIM";
 my @backups = (
   [ $localDir, "/sdcard/DCIM/Camera",                    "int-cam" ],
   [ $localDir, "/sdcard/DCIM/100ANDRO",                  "int-andro" ],
-  [ $localDir, "/storage/$SD_FAT_UUID/DCIM/Camera",      "sd-fat" ],
+  [ $localDir, "/storage/$SD_FAT_UUID/DCIM/Camera",      "sd-cam" ],
   [ $localDir, "/sdcard/Pictures/Screenshots",           "screenshots" ],
   [ $localDir, "/sdcard/Movies/Screencasts",             "screencasts" ],
   #  [ $localDir, "/sdcard/$SNAP_APP_DIR",                  "int-snap" ],
