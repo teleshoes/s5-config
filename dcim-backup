@@ -75,6 +75,7 @@ sub dcimBackup($$$){
     my $dir = "$localDCIM/backup_${now}_${backupSuffix}";
     system "mkdir -p $dir";
     my $host = `ipmagic $ipmagicName`;
+    die "could not read ipmagic $ipmagicName hostname\n" if $? != 0;
     chomp $host;
 
     system "rsync -avP $user\@$host:$remoteDCIM/*.* $dir/";
