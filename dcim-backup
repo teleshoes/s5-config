@@ -129,7 +129,8 @@ sub reorganizeBackedUpRemotes($$$$$){
       print "\n\n#running $count mv commands:\n  $cmdToRun\n";
 
       system "ipmagic", $ipmagicName, "-u", "root", $cmdToRun;
-      die "failed reorganizing remotes\n" if $? != 0;
+      my $exitCode = $?;
+      die "failed reorganizing remotes (exit=$exitCode)\n" if $exitCode != 0;
     }
   }
 }
