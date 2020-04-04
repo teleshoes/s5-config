@@ -1,6 +1,7 @@
 #!/usr/bin/perl
 use strict;
 use warnings;
+use Time::HiRes qw(time);
 
 my $user = "root"; #note that SimpleSSHD ignores the user
 my $ipmagicName = "s5";
@@ -20,6 +21,8 @@ my @backups = (
   #  [ $localDir, "/sdcard/$SNAP_APP_DIR",                  "int-snap" ],
   #  [ $localDir, "/storage/$SD_FAT_UUID/$SNAP_APP_DIR",    "sd-snap" ],
 );
+my $remoteTmpDir = "/storage/$SD_FAT_UUID/dcim-tmp";
+my $localTmpDir = "$ENV{HOME}/dcim-tmp";
 
 my @filetypes = qw(jpg jpeg png gif mp4);
 
@@ -30,12 +33,21 @@ sub runMd5sum($);
 sub wrapQuotes($);
 sub findDCIMFiles($);
 sub updateMd5sums($);
+sub updateLocalDCIMInfo($);
+sub readLocalDCIMInfoCache($);
+sub writeLocalDCIMInfoCache($$);
+sub getRemoteDCIMInfo($);
+sub getFileKey($);
 sub remoteDirExists($;$);
 
 sub main(@){
   for my $backup(@backups){
     my ($localDCIM, $remoteDCIM, $backupSuffix) = @$backup;
     dcimBackup($localDCIM, $remoteDCIM, $backupSuffix);
+  }
+  for my $backup(@backups){
+    my ($localDCIM, $remoteDCIM, $backupSuffix) = @$backup;
+    checkMissing($localDCIM, $remoteDCIM);
   }
 }
 
@@ -217,6 +229,167 @@ sub updateMd5sums($){
   close FH;
 
   return \%newByMd5sum;
+}
+
+sub checkMissing($$){
+  my ($localDCIM, $remoteDCIM) = @_;
+  print "checking $remoteDCIM for missing files"
+    . " (by rough filename and exact mtime+size)\n";
+  my $localDCIMInfo = updateLocalDCIMInfo $localDir;
+
+  my $localInfosByKey = {};
+  for my $file(sort keys %$localDCIMInfo){
+    my $key = getFileKey($file);
+
+    $$localInfosByKey{$key} = [] if not defined $$localInfosByKey{$key};
+    push @{$$localInfosByKey{$key}}, $$localDCIMInfo{$file};
+  }
+
+  my $remoteDCIMInfo = getRemoteDCIMInfo $remoteDCIM;
+  my $fileErrors = {};
+  for my $file(sort keys %$remoteDCIMInfo){
+    my $key = getFileKey($file);
+
+    my @infos;
+    if(defined $$localInfosByKey{$key}){
+      @infos = @{$$localInfosByKey{$key}};
+    }
+
+    my $mtime = $$remoteDCIMInfo{$file}{mtime};
+    my $size = $$remoteDCIMInfo{$file}{size};
+    my $infoFound = 0;
+    for my $info(@infos){
+      if($$info{mtime} == $mtime and $$info{size} == $size){
+        $infoFound = 1;
+        last;
+      }
+    }
+
+    if(@infos == 0){
+      $$fileErrors{$file} = "no local file matching key $key found";
+    }elsif(not $infoFound){
+      $$fileErrors{$file} = "mismatched mtime/size for key $key";
+    }
+  }
+
+  if(%$fileErrors == 0){
+    print "no missing files for $remoteDCIM\n";
+  }else{
+    my @files = sort keys %$fileErrors;
+    my $missingCount = @files;
+    print "$missingCount REMOTE FILES MISSING FROM LOCAL\n";
+    for my $file(sort keys %$fileErrors){
+      my $err = $$fileErrors{$file};
+      print "  $file - $err\n";
+    }
+
+    my $nowMillis = int(time * 1000.0);
+    my $subdir = "dcim-missing-$nowMillis";
+
+    my $host = `ipmagic $ipmagicName`;
+    die "could not read ipmagic $ipmagicName hostname\n" if $? != 0;
+    chomp $host;
+
+    print ""
+      . "\n\n"
+      . "copy command:\n"
+      . "ipmagic $ipmagicName -s '"
+      . "  mkdir -p $remoteTmpDir/$subdir &&"
+      . "  cd $remoteDCIM &&"
+      . "  cp -ar @files $remoteTmpDir/$subdir"
+      . "'\n"
+      . "rsync -avP $user\@$host:$remoteTmpDir/ $localTmpDir/\n";
+  }
+  print "\n";
+}
+
+sub updateLocalDCIMInfo($){
+  my ($localDCIM) = @_;
+  my $infoByFile = readLocalDCIMInfoCache $localDCIM;
+
+  my @files = findDCIMFiles $localDCIM;
+
+  my @newFiles = grep {not defined $$infoByFile{$_}} @files;
+
+  my $newCount = @newFiles;
+  my $oldCount = %$infoByFile;
+  print "getting mtime+size of $newCount local files (skipping $oldCount)\n";
+  for my $file(@newFiles){
+    my @stat = stat "$localDCIM/$file";
+    my $mtime = $stat[9];
+    my $size = $stat[7];
+
+    if(not defined $mtime or not defined $size){
+      die "stat failed for file: $file\n";
+    }
+    $$infoByFile{$file} = {mtime=>$mtime, size=>$size};
+  }
+
+  writeLocalDCIMInfoCache $localDCIM, $infoByFile;
+
+  return $infoByFile;
+}
+
+sub readLocalDCIMInfoCache($){
+  my ($localDCIM) = @_;
+  my @lines = `cat $localDCIM/info 2>/dev/null`;
+  my $infoByFile = {};
+  for my $line(@lines){
+    if($line !~ /^\s*(\d+)\s+(\d+)\s+(\.\/.+)$/){
+      die "malformed info line: $line";
+    }
+    my ($mtime, $size, $file) = ($1, $2, $3);
+    die "duplicate file: $file\n" if defined $$infoByFile{$file};
+    $$infoByFile{$file} = {mtime=>$mtime, size=>$size};
+  }
+  return $infoByFile;
+}
+
+sub writeLocalDCIMInfoCache($$){
+  my ($localDCIM, $infoByFile) = @_;
+  open FH, "> $localDCIM/info";
+  for my $file(sort keys %$infoByFile){
+    printf FH "%10d  %12d  %s\n",
+      $$infoByFile{$file}{mtime}, $$infoByFile{$file}{size}, $file;
+  }
+  close FH;
+}
+
+sub getRemoteDCIMInfo($){
+  my ($remoteDCIM) = @_;
+  my $findStatCmd = "cd $remoteDCIM && find '!' -type d -exec stat -c %Y-%s-%n {} \\;";
+
+  my $infoByFile = {};
+  print "fetching remote file info for $remoteDCIM\n";
+  my @stats = `ipmagic $ipmagicName -s '$findStatCmd'`;
+
+  my $statCount = @stats;
+  print "fetched info for $statCount files\n";
+  for my $stat(@stats){
+    chomp $stat;
+    if($stat !~ /^(\d+)-(\d+)-(.+)$/){
+      die "malformed remote stat output: $stat\n";
+    }
+    my ($mtime, $size, $file) = ($1, $2, $3);
+    if(defined $$infoByFile{$file}){
+      die "duplicate file: $file\n";
+    }
+    $$infoByFile{$file} = {mtime=>$mtime, size=>$size};
+  }
+
+  return $infoByFile;
+}
+
+sub getFileKey($){
+  my ($file) = @_;
+
+  my $key = lc $file;
+  $key =~ s/^.*\///;
+  $key =~ s/^VID_//i;
+  $key =~ s/_[a-z][a-z0-9_\-]*\./\./i;
+  $key =~ s/jpeg$/jpg/i;
+
+  return $key;
 }
 
 sub remoteDirExists($;$){
