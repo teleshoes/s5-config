@@ -30,7 +30,7 @@ sub runMd5sum($);
 sub wrapQuotes($);
 sub findDCIMFiles($);
 sub updateMd5sums($);
-sub remoteDirExists($);
+sub remoteDirExists($;$);
 
 sub main(@){
   for my $backup(@backups){
@@ -219,14 +219,20 @@ sub updateMd5sums($){
   return \%newByMd5sum;
 }
 
-sub remoteDirExists($){
-  my ($dir) = @_;
+sub remoteDirExists($;$){
+  my ($dir, $attempts) = @_;
+  $attempts = 3 if not defined $attempts;
+  if($attempts <= 0){
+    return 0;
+  }
+
   my $testCmd = "if [ -d \"$dir\" ]; then echo exists; fi";
   my $out = `ipmagic $ipmagicName -u $user -s '$testCmd' 2>/dev/null`;
   if($out =~ /^exists$/){
     return 1;
   }else{
-    return 0;
+    sleep 0.1;
+    return remoteDirExists $dir, ($attempts - 1);
   }
 }
 
