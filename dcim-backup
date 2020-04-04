@@ -2,6 +2,7 @@
 use strict;
 use warnings;
 
+my $user = "root"; #note that SimpleSSHD ignores the user
 my $ipmagicName = "s5";
 
 my $SD_FAT_UUID = "8D67-6AFB";
@@ -42,7 +43,7 @@ sub dcimBackup($$$){
   die "remote $remoteDCIM does not exist\n" if not remoteDirExists $remoteDCIM;
   chdir $localDCIM;
   print "Getting md5sums of files in root of remote DCIM\n";
-  my @remoteMd5sums = `ipmagic $ipmagicName -u root -s md5sum $remoteDCIM/*.* 2>/dev/null`;
+  my @remoteMd5sums = `ipmagic $ipmagicName -u $user -s md5sum $remoteDCIM/*.* 2>/dev/null`;
 
   print "===all:\n" . join "", @remoteMd5sums;
   print "===\n\n";
@@ -74,7 +75,7 @@ sub dcimBackup($$$){
     chomp $now;
     my $dir = "$localDCIM/${backupPrefix}_$now";
     system "mkdir -p $dir";
-    system "rsync -avP root\@$host:$remoteDCIM/*.* $dir/";
+    system "rsync -avP $user\@$host:$remoteDCIM/*.* $dir/";
     die "failed rsync backup\n" if $? != 0;
 
     print "updating local md5sums again and re-reorganizing remote\n";
@@ -116,7 +117,7 @@ sub reorganizeBackedUpRemotes($$$$$){
   if(@mvCmds > 0){
     for my $dir(sort keys %dirsToMake){
       my $mkdirCmd = "mkdir -p $dir";
-      system "ipmagic", $ipmagicName, "-u", "root", "-s", $mkdirCmd;
+      system "ipmagic", $ipmagicName, "-u", $user, "-s", $mkdirCmd;
       die "failed to create remote dir $dir\n" if $? != 0;
     }
 
@@ -128,7 +129,7 @@ sub reorganizeBackedUpRemotes($$$$$){
       my $count = @$mvChunk;
       print "\n\n#running $count mv commands:\n  $cmdToRun\n";
 
-      system "ipmagic", $ipmagicName, "-u", "root", "-s", $cmdToRun;
+      system "ipmagic", $ipmagicName, "-u", $user, "-s", $cmdToRun;
       my $exitCode = $?;
       die "failed reorganizing remotes (exit=$exitCode)\n" if $exitCode != 0;
     }
@@ -204,7 +205,7 @@ sub updateMd5sums($){
 sub remoteDirExists($){
   my ($dir) = @_;
   my $testCmd = "if [ -d \"$dir\" ]; then echo exists; fi";
-  my $out = `ipmagic $ipmagicName -u root -s '$testCmd' 2>/dev/null`;
+  my $out = `ipmagic $ipmagicName -u $user -s '$testCmd' 2>/dev/null`;
   if($out =~ /^exists$/){
     return 1;
   }else{
