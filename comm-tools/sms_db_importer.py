@@ -579,8 +579,8 @@ def readMMSFromAndroid(db_file, mms_parts_dir):
       continue
 
     if msg_id not in msgs:
-      print "ERROR: INVALID MESSAGE ID FOR MMS PART=" + str(row)
-      quit(1)
+      print "\n\n\n===\nWARNING: INVALID MESSAGE ID FOR MMS PART=" + str(row)
+      continue
     msg = msgs[msg_id]
 
     part = MMSPart()
