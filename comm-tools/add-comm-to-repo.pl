@@ -50,12 +50,18 @@ sub main(@){
       $allEntriesBySortKey{$sortKey} = $entry;
     }
 
+    my %newEntriesByLine;
     for my $entry(@newEntries){
       my $line = $$entry{line};
       if(defined $repoEntriesByLine{$line}){
         #ignore exact duplicates from repo
         next;
       }
+      if(defined $newEntriesByLine{$line}){
+        print "WARNING: input file contains exact duplicate: $line";
+        next;
+      }
+      $newEntriesByLine{$line} = $entry;
       if(defined $latestRepoEntry and $$entry{date} <= $$latestRepoEntry{date}){
         my ($newLine, $oldLine) = ($$entry{line}, $$latestRepoEntry{line});
         print STDERR "new entry older than last repo entry:\nnew: ${newLine}old: ${oldLine}";
