@@ -1,7 +1,6 @@
 #!/usr/bin/python
 import argparse
 import codecs
-from enum import Enum
 import filecmp
 import glob
 import hashlib
@@ -36,8 +35,13 @@ argHelp = { 'COMMAND':          ( 'import-to-db\n'
           , '--limit':          ( 'limit to the most recent <LIMIT> messages')
           }
 
-SMS_DIR = Enum('SMS_DIR', ['OUT', 'INC'])
-MMS_DIR = Enum('MMS_DIR', ['OUT', 'INC', 'NTF'])
+SMS_DIR_OUT = 'OUT'
+SMS_DIR_INC = 'INC'
+SMS_DIRS = [SMS_DIR_OUT, SMS_DIR_INC]
+MMS_DIR_OUT = 'OUT'
+MMS_DIR_INC = 'INC'
+MMS_DIR_NTF = 'NTF'
+MMS_DIRS = [MMS_DIR_OUT, MMS_DIR_INC, MMS_DIR_NTF]
 
 class UsageFormatter(argparse.HelpFormatter):
   def __init__(self, prog):
@@ -195,22 +199,22 @@ class Text:
       + "," + str(self.date_millis)
       + "," + str(date_sent_millis)
       + "," + self.sms_mms_type
-      + "," + self.getDirectionStr()
+      + "," + self.getDirection()
       + "," + self.date_format
       + "," + "\"" + escapeStr(self.body) + "\""
     )
   def isOutgoing(self):
-    return self.isDir(SMS_DIR.OUT)
+    return self.isDirection(SMS_DIR_OUT)
   def isIncoming(self):
-    return self.isDir(SMS_DIR.INC)
+    return self.isDirection(SMS_DIR_INC)
   def isDirection(self, smsDir):
     self.assertDirectionValid()
     return self.direction == smsDir
-  def getDirectionStr(self):
+  def getDirection(self):
     self.assertDirectionValid()
-    return self.direction.name
+    return self.direction
   def assertDirectionValid(self):
-    if self.direction not in SMS_DIR:
+    if self.direction not in SMS_DIRS:
       print "ERROR: invalid SMS direction=" + str(self.direction)
       quit(1)
   def __unicode__(self):
@@ -276,7 +280,7 @@ class MMS:
         prefixRegex = re.compile(''
           + r'^\d+_'
           + r'([0-9+]+-)*[0-9+]+_'
-          + r'(' + '|'.join(sorted(MMS_DIR.__members__.keys())) + r')_'
+          + r'(' + '|'.join(sorted(MMS_DIRS)) + r')_'
           + r'[0-9a-f]{32}_'
           )
         unprefixedFilename = prefixRegex.sub('', filename)
@@ -314,7 +318,7 @@ class MMS:
     elif self.isIncoming():
       dirName += str(self.from_number)
     dirName += "_"
-    dirName += self.getDirectionStr()
+    dirName += self.getDirection()
     dirName += "_"
     dirName += str(self.checksum)
     return dirName
@@ -326,7 +330,7 @@ class MMS:
     info += "from=" + str(self.from_number) + "\n"
     for to_number in self.to_numbers:
       info += "to=" + str(to_number) + "\n"
-    info += "dir=" + self.getDirectionStr() + "\n"
+    info += "dir=" + self.getDirection() + "\n"
     info += "date=" + str(self.date_millis) + "\n"
     info += "date_sent=" + str(date_sent_millis) + "\n"
     info += "subject=\"" + escapeStr(self.subject) + "\"\n"
@@ -336,17 +340,17 @@ class MMS:
     info += "checksum=" + str(self.checksum) + "\n"
     return info
   def isOutgoing(self):
-    return self.isDirection(MMS_DIR.OUT)
+    return self.isDirection(MMS_DIR_OUT)
   def isIncoming(self):
-    return self.isDirection(MMS_DIR.INC) or self.isDirection(MMS_DIR.NTF)
+    return self.isDirection(MMS_DIR_INC) or self.isDirection(MMS_DIR_NTF)
   def isDirection(self, mmsDir):
     self.assertDirectionValid()
     return self.direction == mmsDir
-  def getDirectionStr(self):
+  def getDirection(self):
     self.assertDirectionValid()
-    return self.direction.name
+    return self.direction
   def assertDirectionValid(self):
-    if self.direction not in MMS_DIR:
+    if self.direction not in MMS_DIRS:
       print "ERROR: invalid MMS direction=" + str(self.direction)
       quit(1)
   def __unicode__(self):
@@ -383,7 +387,7 @@ def readTextsFromCSV(csvFile):
     + r'(\d+),'
     + r'(\d+),'
     + r'(S|M),'
-    + r'(' + '|'.join(sorted(SMS_DIR.__members__.keys())) + r'),'
+    + r'(' + '|'.join(sorted(SMS_DIRS)) + r'),'
     + r'([^,]*),'
     + r'\"(.*)\"'
     )
@@ -396,15 +400,19 @@ def readTextsFromCSV(csvFile):
     date_millis      = m.group(2)
     date_sent_millis = m.group(3)
     sms_mms_type     = m.group(4)
-    directionStr     = m.group(5)
+    direction        = m.group(5)
     date_format      = m.group(6)
     body             = unescapeStr(m.group(7)).decode('utf-8')
+
+    if direction not in SMS_DIRS:
+      print "ERROR: invalid SMS direction=" + direction
+      quit(1)
 
     texts.append(Text( number
                      , date_millis
                      , date_sent_millis
                      , sms_mms_type
-                     , SMS_DIR.__members__[directionStr]
+                     , direction
                      , date_format
                      , body
                      ))
@@ -429,9 +437,9 @@ def readTextsFromAndroid(db_file):
     error = False
     direction = None
     if dir_type == 2: #MESSAGE_TYPE_SENT
-      direction = SMS_DIR.OUT
+      direction = SMS_DIR_OUT
     elif dir_type == 1: #MESSAGE_TYPE_INBOX
-      direction = SMS_DIR.INC
+      direction = SMS_DIR_INC
     elif dir_type == 3: #MESSAGE_TYPE_DRAFT
       #do not backup drafts
       pass
@@ -495,10 +503,10 @@ def readMMSFromMsgDir(mmsMsgDir, mms_parts_dir):
       elif key == "date_sent":
         mms.date_sent_millis = long(val)
       elif key == "dir":
-        if val not in MMS_DIR.__members__:
+        if val not in MMS_DIRS:
           print "ERROR: invalid MMS direction=" + str(val)
           quit(1)
-        mms.direction = MMS_DIR.__members__[val]
+        mms.direction = val
       elif key == "subject":
         mms.subject = unescapeStr(val).decode('utf-8')
       elif key == "body":
@@ -533,11 +541,11 @@ def readMMSFromAndroid(db_file, mms_parts_dir):
       subject = ""
 
     if dir_type_mms == 128:
-      direction = MMS_DIR.OUT
+      direction = MMS_DIR_OUT
     elif dir_type_mms == 132:
-      direction = MMS_DIR.INC
+      direction = MMS_DIR_INC
     elif dir_type_mms == 130:
-      direction = MMS_DIR.NTF
+      direction = MMS_DIR_NTF
     else:
       print "ERROR: INVALID MMS DIRECTION TYPE=" + str(dir_type_mms) + "\n" + str(row)
       quit(1)
@@ -705,13 +713,13 @@ def importMessagesToDb(texts, mmsMessages, db_file):
         , [contactId])
       threadId = c.fetchone()[0]
 
-      if mms.isDirection(MMS_DIR.OUT):
+      if mms.isDirection(MMS_DIR_OUT):
         m_type = 128
         retr_st = None
-      elif mms.isDirection(MMS_DIR.INC):
+      elif mms.isDirection(MMS_DIR_INC):
         m_type = 132
         retr_st = 128
-      elif mms.isDirection(MMS_DIR.NTF):
+      elif mms.isDirection(MMS_DIR_NTF):
         m_type = 130
         retr_st = None
 
@@ -843,9 +851,9 @@ def importMessagesToDb(texts, mmsMessages, db_file):
       print "updated thread: " + str(c.fetchone())
       print "adding entry to message db: " + str(txt)
 
-    if txt.isDirection(SMS_DIR.OUT):
+    if txt.isDirection(SMS_DIR_OUT):
       dir_type = 2
-    elif txt.isDirection(SMS_DIR.INC):
+    elif txt.isDirection(SMS_DIR_INC):
       dir_type = 1
 
     #add message to sms table
