@@ -398,7 +398,7 @@ def readTextsFromCSV(csvFile):
     sms_mms_type     = m.group(4)
     direction        = m.group(5)
     date_format      = m.group(6)
-    body             = unescapeStr(m.group(7)).decode('utf-8')
+    body             = unescapeStr(m.group(7))
 
     if direction not in SMS_DIRS:
       print("ERROR: invalid SMS direction=" + direction)
@@ -504,9 +504,9 @@ def readMMSFromMsgDir(mmsMsgDir, mms_parts_dir):
           quit(1)
         mms.direction = val
       elif key == "subject":
-        mms.subject = unescapeStr(val).decode('utf-8')
+        mms.subject = unescapeStr(val)
       elif key == "body":
-        mms.body = unescapeStr(val).decode('utf-8')
+        mms.body = unescapeStr(val)
       elif key == "att":
         attName = val
         filepath = msgDir + "/" + val
