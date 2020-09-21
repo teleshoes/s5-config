@@ -429,8 +429,8 @@ def readTextsFromAndroid(db_file):
      ORDER BY _id ASC;')
   for row in query:
     number = row[0]
-    date_millis = long(row[1])
-    date_sent_millis = long(row[2])
+    date_millis = int(row[1])
+    date_sent_millis = int(row[2])
     sms_mms_type = "S"
     dir_type = row[3]
 
@@ -497,11 +497,11 @@ def readMMSFromMsgDir(mmsMsgDir, mms_parts_dir):
       elif key == "to":
         mms.to_numbers.append(val)
       elif key == "date":
-        mms.date_millis = long(val)
+        mms.date_millis = int(val)
         mms.date_format = time.strftime("%Y-%m-%d %H:%M:%S",
           time.localtime(mms.date_millis/1000))
       elif key == "date_sent":
-        mms.date_sent_millis = long(val)
+        mms.date_sent_millis = int(val)
       elif key == "dir":
         if val not in MMS_DIRS:
           print("ERROR: invalid MMS direction=" + str(val))
@@ -532,8 +532,8 @@ def readMMSFromAndroid(db_file, mms_parts_dir):
   msgs = {}
   for row in query:
     msg_id = row[0]
-    date_millis = long(row[1]) * 1000
-    date_sent_millis = long(row[2]) * 1000
+    date_millis = int(row[1]) * 1000
+    date_sent_millis = int(row[2]) * 1000
     dir_type_mms = row[3]
     subject = row[4]
 
