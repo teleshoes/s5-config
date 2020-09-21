@@ -180,6 +180,12 @@ def main():
     print("  (expected one of 'export-from-db' or 'import-to-db')")
     quit(1)
 
+def md5Update(md5, msg):
+  if type(msg) == str:
+    md5.update(msg.encode("utf-8"))
+  else:
+    md5.update(msg)
+
 class Text:
   def __init__( self, number, date_millis, date_sent_millis,
               sms_mms_type, direction, date_format, body):
@@ -294,17 +300,17 @@ class MMS:
   def generateChecksum(self):
     md5 = hashlib.md5()
     if self.subject != None:
-      md5.update(escapeStr(self.subject.encode("utf-8")))
+      md5Update(md5, escapeStr(self.subject))
     if self.body != None:
-      md5.update(escapeStr(self.body.encode("utf-8")))
+      md5Update(md5, escapeStr(self.body))
     for attName in sorted(self.attFiles.keys()):
-      md5.update("\n" + attName + "\n")
+      md5Update(md5, "\n" + attName + "\n")
       filepath = self.attFiles[attName]
       if not os.path.isfile(filepath):
         print("ERROR: missing att file=" + filepath)
         quit(1)
       f = open(filepath, 'r')
-      md5.update(f.read())
+      md5Update(md5, f.read())
       f.close()
     return md5.hexdigest()
   def getMsgDirName(self):
