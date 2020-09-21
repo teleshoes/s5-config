@@ -217,10 +217,8 @@ class Text:
     if self.direction not in SMS_DIRS:
       print("ERROR: invalid SMS direction=" + str(self.direction))
       quit(1)
-  def __unicode__(self):
-    return self.toCsv()
   def __str__(self):
-    return unicode(self).encode('utf-8')
+    return self.toCsv()
 
 def escapeStr(s):
   return (s
@@ -353,10 +351,8 @@ class MMS:
     if self.direction not in MMS_DIRS:
       print("ERROR: invalid MMS direction=" + str(self.direction))
       quit(1)
-  def __unicode__(self):
-    return self.getInfo()
   def __str__(self):
-    return unicode(self).encode('utf-8')
+    return self.getInfo()
 
 class MMSPart:
   def __init__(self):
