@@ -607,9 +607,13 @@ def readMMSFromAndroid(db_file, mms_parts_dir):
 
     is_sender_addr = False
     is_recipient_addr = False
-    if dir_type_addr == 137:
+    if dir_type_addr == 137: #from
       is_sender_addr = True
-    elif dir_type_addr == 151:
+    elif dir_type_addr == 151: #to
+      is_recipient_addr = True
+    elif dir_type_addr == 130: #cc
+      is_recipient_addr = True
+    elif dir_type_addr == 129: #bcc
       is_recipient_addr = True
     else:
       print("WARNING: SKIPPING MSG, INVALID MMS ADDR DIR=" + str(dir_type_addr) + "\n" + str(row))
