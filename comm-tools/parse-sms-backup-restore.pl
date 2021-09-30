@@ -1,0 +1,409 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+
+use POSIX qw(strftime);
+use HTML::Entities qw(decode_entities);
+use MIME::Base64 qw(decode_base64);
+use Digest::MD5 qw(md5_hex);
+use Encode qw(encode_utf8);
+
+sub parseXML($);
+sub formatSMS($);
+sub createMMSDir($$);
+sub cleanBody($);
+sub cleanNumber($);
+sub formatDateMillis($);
+sub getMd5($$$);
+
+my $usage = "Usage:
+  $0 --sms XML_FILE SMS_OUT_FILE MMS_OUT_DIR
+    -parse <sms> tags into format:
+      <NUMBER>,<DATE_MILLIS>,<DATE_SENT_MILLIS>,<SMS_OR_MMS>,<INC_OR_OUT>,<DATE_FMT>,<TEXT>
+
+    -parse <mms> tags into individual msg dirs underneath MMS_OUT_DIR
+      named:
+        <MMS_OUT_DIR>/<DATE_MILLIS>_<PHONE-PHONE-PHONE>_<INC_OR_OUT>_<MD5_OF_CONTENTS>/
+      containing:
+        each file attachment, named PART_NAME
+        a file named 'info' formatted:
+          from=<PHONE>
+          to=<PHONE>
+          to=<PHONE>
+          to=<PHONE>
+          dir=<INC_OR_OUT>
+          date=<DATE_MILLIS>
+          date_sent=<DATE_MILLIS>
+          subject=<SUBJECT>
+          body=<BODY>
+";
+
+sub main(@){
+  $| = 1;
+  if(@_ == 4 and $_[0] =~ /^(--sms)$/){
+    my ($xmlSrc, $smsDestFile, $mmsDestDir) = ($_[1], $_[2]);
+    print "parsing XML\n";
+    my $data = parseXML($xmlSrc);
+    print "done parsing\n";
+
+    print "writing sms to $smsDestFile\n";
+    open FH, "> $smsDestFile" or die "ERROR: could not write $smsDestFile\n$!\n";
+    for my $sms(@{$$data{sms}}){
+      print FH formatSMS($sms);
+    }
+    close FH;
+
+    print "writing mms to $mmsDestDir/\n";
+    for my $mms(@{$$data{mms}}){
+      createMMSDir($mmsDestDir, $mms);
+    }
+  }else{
+    die $usage;
+  }
+}
+
+sub parseXML($){
+  my ($xmlFile) = @_;
+  open XML_FILE, "< $xmlFile" or die "ERROR: could not read $xmlFile\n$!\n";
+  my $count = 0;
+  my $total = 0;
+
+  my $data = {
+    sms => [],
+    mms => [],
+  };
+  my $curMMS = undef;
+
+  while(my $line = <XML_FILE>){
+    $line =~ s/[\r\n]*//g;
+    next if $line =~ /^<\?xml.*\?>$/;
+    next if $line =~ /^<!--/;
+    next if $line =~ /-->$/;
+    next if $line =~ /^\s*$/;
+    next if $line =~ /^To view this file in a more readable format.*$/;
+    if($line =~ /^
+      \s* <smses
+        \s+ count="(\d+)"
+        \s+ backup_set="[^"]*"
+        \s+ backup_date="[^"]*"
+        (?:\s+ type="[^"]*")?
+      \s* >
+    $/x){
+      $total = $1;
+    }elsif($line =~ /^
+      \s* <sms
+        \s+ protocol="0"
+        \s+ address="([^"]*)"
+        \s+ date="(\d+)"
+        \s+ type="(1|2)"
+        \s+ subject="null"
+        \s+ body=("[^"]*"|'[^']*')
+        \s+ toa="null"
+        \s+ sc_toa="null"
+        \s+ service_center="[^"]*"
+        \s+ read="[01]"
+        \s+ status="-1"
+        \s+ locked="0"
+        \s+ date_sent="(\d+)"
+        \s+ sub_id="[^"]*"
+        \s+ readable_date="[^"]*"
+        \s+ contact_name="[^"]*"
+      \s* \/>
+    $/x){
+      my ($addr, $date, $type, $body, $dateSent) = ($1, $2, $3, $4, $5);
+      $dateSent = $date if $dateSent =~ /^0*$/;
+
+      my $dir = $type == 1 ? "INC" : "OUT";
+      $count++;
+      print "$count/$total\n" if $count % 100 == 0 or $count == $total;
+
+      push @{$$data{sms}}, {
+        addr     => $addr,
+        date     => $date,
+        dateSent => $dateSent,
+        dir      => $dir,
+        body     => $body,
+      };
+    }elsif($line =~ /^
+      \s* <mms
+        \s+ date="(\d+)"
+        \s+ rr="[^"]*"
+        \s+ sub="([^"]*)"
+        \s+ ct_t="[^"]*"
+        \s+ read_status="[^"]*"
+        \s+ seen="[^"]*"
+        \s+ msg_box="[^"]*"
+        (?: \s+ address="([^"]+)" )?
+        \s+ sub_cs="[^"]*"
+        \s+ resp_st="[^"]*"
+        \s+ retr_st="[^"]*"
+        \s+ d_tm="[^"]*"
+        \s+ text_only="[^"]*"
+        \s+ exp="[^"]*"
+        \s+ locked="[^"]*"
+        \s+ m_id="[^"]*"
+        \s+ st="null"
+        \s+ retr_txt_cs="[^"]*"
+        \s+ retr_txt="[^"]*"
+        \s+ creator="[^"]*"
+        \s+ date_sent="(\d+)"
+        \s+ read="[^"]*"
+        \s+ m_size="[^"]*"
+        \s+ rpt_a="[^"]*"
+        \s+ ct_cls="[^"]*"
+        \s+ pri="[^"]*"
+        \s+ sub_id="[^"]*"
+        \s+ tr_id="[^"]*"
+        \s+ resp_txt="[^"]*"
+        \s+ ct_l="[^"]*"
+        \s+ m_cls="[^"]*"
+        \s+ d_rpt="[^"]*"
+        \s+ v="[^"]*"
+        \s+ m_type="([^"]*)"
+        \s+ readable_date="[^"]*"
+        \s+ contact_name="[^"]*"
+      \s* >
+    $/x){
+      my ($date, $subject, $addr, $dateSent, $mType) = ($1, $2, $3, $4, $5);
+      $count++;
+      print "$count/$total\n" if $count % 100 == 0 or $count == $total;
+
+      $subject = "" if $subject eq "null";
+
+      $dateSent = $date if $dateSent =~ /^0*$/;
+
+      my $dir;
+      if($mType == 128){
+        $dir = "OUT";
+      }elsif($mType == 132){
+        $dir = "INC";
+      }elsif($mType == 130){
+        $dir = "NTF";
+      }else{
+        die "ERROR: unknown MMS direction type\n$line";
+      }
+
+      die "ERROR: missing </mms> tag\n" if defined $curMMS;
+      $curMMS = {
+        subject    => $subject,
+        dir        => $dir,
+        date       => $date,
+        dateSent   => $dateSent,
+        mainAddr   => $addr,
+        sender     => undef,
+        recipients => [],
+        parts      => [],
+      };
+      push @{$$data{mms}}, $curMMS;
+    }elsif($line =~ /^\s*<parts>\s*$/){
+      next;
+    }elsif($line =~ /^
+      \s* <part
+        \s+ seq="[^"]*"
+        \s+ ct="([^"]*)"
+        \s+ name=("[^"]*"|'[^']*')
+        \s+ chset="[^"]*"
+        \s+ cd="[^"]*"
+        \s+ fn="[^"]*"
+        \s+ cid="[^"]*"
+        \s+ cl="([^"]*)"
+        \s+ ctt_s="[^"]*"
+        \s+ ctt_t="[^"]*"
+        \s+ text=("[^"]*"|'[^']*')
+        \s+ (?: data="([^"]*)" )?
+      \s* \/>
+    /x){
+      my ($ct, $name, $cl, $text, $data) = ($1, $2, $3, $4, $5);
+      die "ERROR: <part> outside of <mms>\n" if not defined $curMMS;
+      $data = decode_base64($data) if defined $data;
+
+      push @{$$curMMS{parts}}, {
+        ct   => $ct,
+        name => $name,
+        cl   => $cl,
+        text => $text,
+        data => $data,
+      };
+    }elsif($line =~ /^\s*<\/parts>\s*$/){
+      #do nothing
+    }elsif($line =~ /^\s*<addrs>\s*$/){
+      #do nothing
+    }elsif($line =~ /^\s*<addrs \/>\s*$/){
+      #do nothing
+    }elsif($line =~ /^
+      \s* <addr
+        \s+ address="([^"]*)"
+        \s+ type="(\d+)"
+        \s+ charset="\d+"
+      \s* \/>
+    $/x){
+      my ($addr, $type) = ($1, $2);
+      die "ERROR: <addr> outside of <mms>\n" if not defined $curMMS;
+      if($type =~ /^(137)$/){
+        #addr = sender
+        if(defined $$curMMS{sender}){
+          die "ERROR: too many 'from' addresses:\n$line";
+        }
+        $$curMMS{sender} = $addr;
+      }elsif($type =~ /^(151|130|129)$/){ #to/cc/bcc
+        #addr = recip
+        push @{$$curMMS{recipients}}, $addr;
+      }else{
+        die "ERROR: invalid MMS addr direction type:\n$line";
+      }
+    }elsif($line =~ /^\s*<\/addrs>\s*$/){
+      #do nothing
+    }elsif($line =~ /^\s*<\/mms>\s*$/){
+      $curMMS = undef;
+    }elsif($line =~ /^\s*<\/smses>\s*$/){
+      #do nothing
+    }else{
+      die "ERROR: malformed line:\n$line";
+    }
+  }
+  close XML_FILE;
+
+  return $data;
+}
+
+sub formatSMS($){
+  my ($sms) = @_;
+  my $fmt = '';
+  $fmt .= ""  . cleanNumber($$sms{addr});
+  $fmt .= "," . $$sms{date};
+  $fmt .= "," . $$sms{dateSent};
+  $fmt .= "," . "S";
+  $fmt .= "," . $$sms{dir};
+  $fmt .= "," . formatDateMillis($$sms{date});
+  $fmt .= "," . "\"" . cleanBody($$sms{body}) . "\"";
+  $fmt .= "\n";
+  return $fmt;
+}
+
+sub createMMSDir($$){
+  my ($baseDir, $mms) = @_;
+  if(not -d $baseDir){
+    die "ERROR: $baseDir is not a dir\n";
+  }
+
+  my $body = '';
+
+  my $attFiles = {};
+
+  my $attFileIndex = 1;
+
+  for my $part(@{$$mms{parts}}){
+    my $ct = $$part{ct};
+    my $fileName = $$part{cl};
+    my $text = $$part{text};
+    my $data = $$part{data};
+    if($ct =~ /smil/){
+      next;
+    }elsif($ct =~ /^text\/plain$/){
+      if($body ne ""){
+        print STDERR "WARNING: concatenating multiple text parts for MMS $$mms{date}\n";
+      }
+      if(not defined $text){
+        die "ERROR: missing text for text/plain part for MMS $$mms{date}\n";
+      }
+      $body .= $text;
+    }else{
+      if(not defined $fileName or $fileName eq "null" or $fileName =~ /^\s*$/){
+        $fileName = $$part{name};
+      }
+      if(not defined $fileName or $fileName eq "null" or $fileName =~ /^\s*$/){
+        die "ERROR: missing filename for MMS $$mms{date}\n";
+      }
+      my $prefix = "PART_" . ($$mms{date} + $attFileIndex) . "_";
+      $attFileIndex++;
+      $fileName = "${prefix}$fileName";
+      if(defined $$attFiles{$fileName}){
+        die "ERROR: duplicate filename for MMS $$mms{date}\n";
+      }
+      $$attFiles{$fileName} = $data;
+    }
+  }
+
+  my $md5 = getMd5(cleanBody($$mms{subject}), cleanBody($body), $attFiles);
+
+  my $from = cleanNumber($$mms{sender});
+  $from = "None" if $from eq "";
+
+  my @tos = map{cleanNumber($_)} @{$$mms{recipients}};
+
+  my $info = '';
+  $info .= "from=" . $from . "\n";
+  for my $to(@tos){
+    $info .= "to=" . $to . "\n";
+  }
+  $info .= "dir=" . $$mms{dir} . "\n";
+  $info .= "date=" . $$mms{date} . "\n";
+  $info .= "date_sent=" . $$mms{dateSent} . "\n";
+  $info .= "subject=\"" . cleanBody($$mms{subject}) . "\"\n";
+  $info .= "body=\"" . cleanBody($body) . "\"\n";
+  $info .= "checksum=" . $md5 . "\n";
+
+
+  my $dirName = '';
+  $dirName .= ""  . $$mms{date};
+  if($$mms{dir} eq "OUT"){
+    $dirName .= "_" . join("-", @tos);
+  }else{
+    $dirName .= "_" . $from;
+  }
+  $dirName .= "_" . $$mms{dir};
+  $dirName .= "_" . $md5;
+
+  my $msgDir = "$baseDir/$dirName";
+  system "mkdir", "-p", $msgDir;
+
+  open INFO_FH, "> $msgDir/info" or die "ERROR: could not write $msgDir/info\n$!\n";
+  binmode INFO_FH, "encoding(UTF-8)";
+  print INFO_FH $info;
+  close INFO_FH;
+
+  for my $fileName(sort keys %$attFiles){
+    open ATT_FH, "> $msgDir/$fileName" or die "ERROR: could not write $msgDir/$fileName\n$!\n";
+    binmode ATT_FH;
+    print ATT_FH $$attFiles{$fileName};
+    close ATT_FH;
+  }
+}
+
+sub cleanBody($){
+  my ($body) = @_;
+  $body =~ s/^['"]//;
+  $body =~ s/['"]$//;
+
+  $body = decode_entities($body);
+  $body =~ s/"/\\"/g;
+  return $body;
+}
+
+sub cleanNumber($){
+  my ($number) = @_;
+  $number = '' if not defined $number;
+  $number =~ s/[^+0-9]//g;
+  $number =~ s/^\+?1(\d{10})$/$1/;
+  return $number;
+}
+
+sub formatDateMillis($){
+  my ($dateMillis) = @_;
+  return strftime("%Y-%m-%d %H:%M:%S", localtime(int($dateMillis/1000.0)));
+}
+
+sub getMd5($$$){
+  my ($subject, $body, $attFiles) = @_;
+  my $msg = '';
+  $msg .= $subject if defined $subject;
+  $msg .= $body if defined $body;
+  for my $fileName(sort keys %$attFiles){
+    my $contents = $$attFiles{$fileName};
+    $msg .= "\n$fileName\n";
+    $msg .= $contents;
+  }
+  return md5_hex(encode_utf8($msg));
+}
+
+&main(@ARGV);
