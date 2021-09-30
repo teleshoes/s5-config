@@ -139,7 +139,7 @@ sub parseXML($){
       }elsif($mType == 130){
         $dir = "NTF";
       }else{
-        die "ERROR: unknown MMS direction type\n$line";
+        die "ERROR: unknown MMS direction type '$mType'\n$line";
       }
 
       die "ERROR: missing </mms> tag\n" if defined $curMMS;
@@ -181,13 +181,13 @@ sub parseXML($){
       my $type     = getAtt($line, 1, "type",      qr/^\d+$/);
       die "ERROR: <addr> outside of <mms>\n" if not defined $curMMS;
       if($type =~ /^(137)$/){
-        #addr = sender
+        #from=137
         if(defined $$curMMS{sender}){
           die "ERROR: too many 'from' addresses:\n$line";
         }
         $$curMMS{sender} = $addr;
-      }elsif($type =~ /^(151|130|129)$/){ #to/cc/bcc
-        #addr = recip
+      }elsif($type =~ /^(151|130|129)$/){
+        #to=151, cc=130, bcc=129
         push @{$$curMMS{recipients}}, $addr;
       }else{
         die "ERROR: invalid MMS addr direction type:\n$line";
