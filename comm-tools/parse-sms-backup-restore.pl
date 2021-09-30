@@ -9,6 +9,7 @@ use Digest::MD5 qw(md5_hex);
 use Encode qw(encode_utf8);
 
 sub parseXML($);
+sub getAtt($$$$);
 sub formatSMS($);
 sub createMMSDir($$);
 sub cleanBody($);
@@ -83,36 +84,15 @@ sub parseXML($){
     next if $line =~ /-->$/;
     next if $line =~ /^\s*$/;
     next if $line =~ /^To view this file in a more readable format.*$/;
-    if($line =~ /^
-      \s* <smses
-        \s+ count="(\d+)"
-        \s+ backup_set="[^"]*"
-        \s+ backup_date="[^"]*"
-        (?:\s+ type="[^"]*")?
-      \s* >
-    $/x){
-      $total = $1;
-    }elsif($line =~ /^
-      \s* <sms
-        \s+ protocol="0"
-        \s+ address="([^"]*)"
-        \s+ date="(\d+)"
-        \s+ type="(1|2)"
-        \s+ subject="null"
-        \s+ body=("[^"]*"|'[^']*')
-        \s+ toa="null"
-        \s+ sc_toa="null"
-        \s+ service_center="[^"]*"
-        \s+ read="[01]"
-        \s+ status="-1"
-        \s+ locked="0"
-        \s+ date_sent="(\d+)"
-        \s+ sub_id="[^"]*"
-        \s+ readable_date="[^"]*"
-        \s+ contact_name="[^"]*"
-      \s* \/>
-    $/x){
-      my ($addr, $date, $type, $body, $dateSent) = ($1, $2, $3, $4, $5);
+    if($line =~ /^\s*<smses(\s+[^<>]*)>\s*$/){
+      $total       = getAtt($line, 1, "count", qr/\d+/);
+    }elsif($line =~ /^\s*<sms(\s+[^<>]*)>\s*$/){
+      my $date     = getAtt($line, 1, "date",      qr/^\d+$/);
+      my $dateSent = getAtt($line, 1, "date_sent", qr/^\d+$/);
+      my $type     = getAtt($line, 1, "type",      qr/^(1|2)$/);
+      my $addr     = getAtt($line, 1, "address",   qr/^.*$/);
+      my $body     = getAtt($line, 1, "body"   ,   qr/^.*$/);
+
       $dateSent = $date if $dateSent =~ /^0*$/;
 
       my $dir = $type == 1 ? "INC" : "OUT";
@@ -126,53 +106,19 @@ sub parseXML($){
         dir      => $dir,
         body     => $body,
       };
-    }elsif($line =~ /^
-      \s* <mms
-        \s+ date="(\d+)"
-        \s+ rr="[^"]*"
-        \s+ sub="([^"]*)"
-        \s+ ct_t="[^"]*"
-        \s+ read_status="[^"]*"
-        \s+ seen="[^"]*"
-        \s+ msg_box="[^"]*"
-        (?: \s+ address="([^"]+)" )?
-        \s+ sub_cs="[^"]*"
-        \s+ resp_st="[^"]*"
-        \s+ retr_st="[^"]*"
-        \s+ d_tm="[^"]*"
-        \s+ text_only="[^"]*"
-        \s+ exp="[^"]*"
-        \s+ locked="[^"]*"
-        \s+ m_id="[^"]*"
-        \s+ st="null"
-        \s+ retr_txt_cs="[^"]*"
-        \s+ retr_txt="[^"]*"
-        \s+ creator="[^"]*"
-        \s+ date_sent="(\d+)"
-        \s+ read="[^"]*"
-        \s+ m_size="[^"]*"
-        \s+ rpt_a="[^"]*"
-        \s+ ct_cls="[^"]*"
-        \s+ pri="[^"]*"
-        \s+ sub_id="[^"]*"
-        \s+ tr_id="[^"]*"
-        \s+ resp_txt="[^"]*"
-        \s+ ct_l="[^"]*"
-        \s+ m_cls="[^"]*"
-        \s+ d_rpt="[^"]*"
-        \s+ v="[^"]*"
-        \s+ m_type="([^"]*)"
-        \s+ readable_date="[^"]*"
-        \s+ contact_name="[^"]*"
-      \s* >
-    $/x){
-      my ($date, $subject, $addr, $dateSent, $mType) = ($1, $2, $3, $4, $5);
+    }elsif($line =~ /^\s*<mms(\s+[^<>]*)>\s*$/){
+      my $date     = getAtt($line, 1, "date",      qr/^\d+$/);
+      my $dateSent = getAtt($line, 1, "date_sent", qr/^\d+$/);
+      my $subject  = getAtt($line, 1, "sub",       qr/^.*$/);
+      my $mType    = getAtt($line, 1, "m_type",    qr/^.*$/);
+      my $addr     = getAtt($line, 0, "address",   qr/^.*$/);
+
+      $dateSent = $date if $dateSent =~ /^0*$/;
+
       $count++;
       print "$count/$total\n" if $count % 100 == 0 or $count == $total;
 
       $subject = "" if $subject eq "null";
-
-      $dateSent = $date if $dateSent =~ /^0*$/;
 
       my $dir;
       if($mType == 128){
@@ -199,23 +145,16 @@ sub parseXML($){
       push @{$$data{mms}}, $curMMS;
     }elsif($line =~ /^\s*<parts>\s*$/){
       next;
-    }elsif($line =~ /^
-      \s* <part
-        \s+ seq="[^"]*"
-        \s+ ct="([^"]*)"
-        \s+ name=("[^"]*"|'[^']*')
-        \s+ chset="[^"]*"
-        \s+ cd="[^"]*"
-        \s+ fn="[^"]*"
-        \s+ cid="[^"]*"
-        \s+ cl="([^"]*)"
-        \s+ ctt_s="[^"]*"
-        \s+ ctt_t="[^"]*"
-        \s+ text=("[^"]*"|'[^']*')
-        \s+ (?: data="([^"]*)" )?
-      \s* \/>
-    /x){
-      my ($ct, $name, $cl, $text, $data) = ($1, $2, $3, $4, $5);
+    }elsif($line =~ /^\s*<part\s+([^<>]+?)(?:\s+data="([^"])*")?\s*\/>$/){
+      my ($atts, $data) = ($1, $2);
+      my $ct       = getAtt($atts, 1, "ct",        qr/^.+$/);
+      my $name     = getAtt($atts, 1, "name",      qr/^.*$/);
+      my $cl       = getAtt($atts, 1, "cl",        qr/^.*$/);
+      my $text     = getAtt($atts, 1, "text",      qr/^.*$/);
+
+      if($atts =~ /data=['"]/){
+        die "ERROR: att 'data' must be last in <part> and use \"s (optimization)\n";
+      }
       die "ERROR: <part> outside of <mms>\n" if not defined $curMMS;
       $data = decode_base64($data) if defined $data;
 
@@ -232,14 +171,9 @@ sub parseXML($){
       #do nothing
     }elsif($line =~ /^\s*<addrs \/>\s*$/){
       #do nothing
-    }elsif($line =~ /^
-      \s* <addr
-        \s+ address="([^"]*)"
-        \s+ type="(\d+)"
-        \s+ charset="\d+"
-      \s* \/>
-    $/x){
-      my ($addr, $type) = ($1, $2);
+    }elsif($line =~ /^\s*<addr(\s+[^<>]*)>\s*$/){
+      my $addr     = getAtt($line, 1, "address",   qr/^.*$/);
+      my $type     = getAtt($line, 1, "type",      qr/^\d+$/);
       die "ERROR: <addr> outside of <mms>\n" if not defined $curMMS;
       if($type =~ /^(137)$/){
         #addr = sender
@@ -266,6 +200,21 @@ sub parseXML($){
   close XML_FILE;
 
   return $data;
+}
+
+sub getAtt($$$$){
+  my ($xml, $required, $attName, $valRegex) = @_;
+  my $val;
+  $val = $1 if not defined $val and $xml =~ /\s+$attName='([^']*)'/;
+  $val = $1 if not defined $val and $xml =~ /\s+$attName="([^"]*)"/;
+
+  if($required and not defined $val){
+    die "ERROR: could not find required att '$attName' in:\n$xml\n";
+  }
+  if(defined $val and $val !~ /^$valRegex$/){
+    die "ERROR: invalid value '$val' for $attName\n$xml\n";
+  }
+  return $val;
 }
 
 sub formatSMS($){
