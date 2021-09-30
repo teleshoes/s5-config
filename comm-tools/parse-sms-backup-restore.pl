@@ -84,6 +84,17 @@ sub parseXML($){
     next if $line =~ /-->$/;
     next if $line =~ /^\s*$/;
     next if $line =~ /^To view this file in a more readable format.*$/;
+
+    next if $line =~ /^\s*<parts>\s*$/;
+    next if $line =~ /^\s*<parts\s*\/\s*>\s*$/;
+    next if $line =~ /^\s*<\/parts>\s*$/;
+
+    next if $line =~ /^\s*<addrs>\s*$/;
+    next if $line =~ /^\s*<addrs \/>\s*$/;
+    next if $line =~ /^\s*<\/addrs>\s*$/;
+
+    next if $line =~ /^\s*<\/smses>\s*$/;
+
     if($line =~ /^\s*<smses(\s+[^<>]*)>\s*$/){
       $total       = getAtt($line, 1, "count", qr/\d+/);
     }elsif($line =~ /^\s*<sms(\s+[^<>]*)>\s*$/){
@@ -143,8 +154,8 @@ sub parseXML($){
         parts      => [],
       };
       push @{$$data{mms}}, $curMMS;
-    }elsif($line =~ /^\s*<parts>\s*$/){
-      next;
+    }elsif($line =~ /^\s*<\/mms>\s*$/){
+      $curMMS = undef;
     }elsif($line =~ /^\s*<part\s+([^<>]+?)(?:\s+data="([^"])*")?\s*\/>$/){
       my ($atts, $data) = ($1, $2);
       my $ct       = getAtt($atts, 1, "ct",        qr/^.+$/);
@@ -165,12 +176,6 @@ sub parseXML($){
         text => $text,
         data => $data,
       };
-    }elsif($line =~ /^\s*<\/parts>\s*$/){
-      #do nothing
-    }elsif($line =~ /^\s*<addrs>\s*$/){
-      #do nothing
-    }elsif($line =~ /^\s*<addrs \/>\s*$/){
-      #do nothing
     }elsif($line =~ /^\s*<addr(\s+[^<>]*)>\s*$/){
       my $addr     = getAtt($line, 1, "address",   qr/^.*$/);
       my $type     = getAtt($line, 1, "type",      qr/^\d+$/);
@@ -187,12 +192,6 @@ sub parseXML($){
       }else{
         die "ERROR: invalid MMS addr direction type:\n$line";
       }
-    }elsif($line =~ /^\s*<\/addrs>\s*$/){
-      #do nothing
-    }elsif($line =~ /^\s*<\/mms>\s*$/){
-      $curMMS = undef;
-    }elsif($line =~ /^\s*<\/smses>\s*$/){
-      #do nothing
     }else{
       die "ERROR: malformed line:\n$line";
     }
