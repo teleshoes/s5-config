@@ -64,7 +64,6 @@ sub main(@){
 
 sub parseXML($){
   my ($xmlFile) = @_;
-  open XML_FILE, "< $xmlFile" or die "ERROR: could not read $xmlFile\n$!\n";
   my $count = 0;
   my $total = 0;
 
@@ -74,8 +73,11 @@ sub parseXML($){
   };
   my $curMMS = undef;
 
+  local $/ = "\r\n";
+  open XML_FILE, "< $xmlFile" or die "ERROR: could not read $xmlFile\n$!\n";
+
   while(my $line = <XML_FILE>){
-    $line =~ s/[\r\n]*//g;
+    chomp $line;
     next if $line =~ /^<\?xml.*\?>$/;
     next if $line =~ /^<!--/;
     next if $line =~ /-->$/;
