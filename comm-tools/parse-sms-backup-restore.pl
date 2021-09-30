@@ -74,11 +74,11 @@ sub parseXML($){
   };
   my $curMMS = undef;
 
-  local $/ = "\r\n";
   open XML_FILE, "< $xmlFile" or die "ERROR: could not read $xmlFile\n$!\n";
 
   while(my $line = <XML_FILE>){
     chomp $line;
+    chop $line if $line =~ /\r$/;
     next if $line =~ /^<\?xml.*\?>$/;
     next if $line =~ /^<!--/;
     next if $line =~ /-->$/;
