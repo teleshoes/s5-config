@@ -8,7 +8,7 @@ use MIME::Base64 qw(decode_base64);
 use Digest::MD5 qw(md5_hex);
 use Encode qw(encode_utf8);
 
-sub parseXML($);
+sub parseXML($$$);
 sub getAtt($$$$);
 sub formatSMS($);
 sub createMMSDir($$);
@@ -43,36 +43,22 @@ sub main(@){
   $| = 1;
   if(@_ == 4 and $_[0] =~ /^(--sms)$/){
     my ($xmlSrc, $smsDestFile, $mmsDestDir) = ($_[1], $_[2], $_[3]);
-    print "parsing XML\n";
-    my $data = parseXML($xmlSrc);
-    print "done parsing\n";
-
-    print "writing sms to $smsDestFile\n";
-    open FH, "> $smsDestFile" or die "ERROR: could not write $smsDestFile\n$!\n";
-    for my $sms(@{$$data{sms}}){
-      print FH formatSMS($sms);
-    }
-    close FH;
-
-    print "writing mms to $mmsDestDir/\n";
-    for my $mms(@{$$data{mms}}){
-      createMMSDir($mmsDestDir, $mms);
-    }
+    parseXML($xmlSrc, $smsDestFile, $mmsDestDir);
   }else{
     die $usage;
   }
 }
 
-sub parseXML($){
-  my ($xmlFile) = @_;
+sub parseXML($$$){
+  my ($xmlFile, $destSMSFile, $destMMSDir) = @_;
   my $count = 0;
   my $total = 0;
 
-  my $data = {
-    sms => [],
-    mms => [],
-  };
+  my $curSMS = undef;
   my $curMMS = undef;
+
+  open SMS_OUT_FH, "> $destSMSFile" or die "ERROR: could not write $destSMSFile\n$!\n";
+  binmode SMS_OUT_FH, "encoding(UTF-8)";
 
   open XML_FILE, "< $xmlFile" or die "ERROR: could not read $xmlFile\n$!\n";
 
@@ -110,13 +96,15 @@ sub parseXML($){
       $count++;
       print "$count/$total\n" if $count % 100 == 0 or $count == $total;
 
-      push @{$$data{sms}}, {
+      $curSMS = {
         addr     => $addr,
         date     => $date,
         dateSent => $dateSent,
         dir      => $dir,
         body     => $body,
       };
+      print SMS_OUT_FH formatSMS($curSMS);
+      $curSMS = undef;
     }elsif($line =~ /^\s*<mms(\s+[^<>]*)>\s*$/){
       my $date     = getAtt($line, 1, "date",      qr/^\d+$/);
       my $dateSent = getAtt($line, 1, "date_sent", qr/^\d+$/);
@@ -153,8 +141,8 @@ sub parseXML($){
         recipients => [],
         parts      => [],
       };
-      push @{$$data{mms}}, $curMMS;
     }elsif($line =~ /^\s*<\/mms>\s*$/){
+      createMMSDir($destMMSDir, $curMMS);
       $curMMS = undef;
     }elsif($line =~ /^\s*<part\s+([^<>]+?)(?:\s+data="([^"])*")?\s*\/>$/){
       my ($atts, $data) = ($1, $2);
@@ -198,7 +186,10 @@ sub parseXML($){
   }
   close XML_FILE;
 
-  return $data;
+  close SMS_OUT_FH;
+
+  die "ERROR: last SMS not written\n" if defined $curSMS;
+  die "ERROR: last MMS not written\n" if defined $curMMS;
 }
 
 sub getAtt($$$$){
