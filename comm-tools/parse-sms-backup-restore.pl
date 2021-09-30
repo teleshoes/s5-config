@@ -42,7 +42,7 @@ my $usage = "Usage:
 sub main(@){
   $| = 1;
   if(@_ == 4 and $_[0] =~ /^(--sms)$/){
-    my ($xmlSrc, $smsDestFile, $mmsDestDir) = ($_[1], $_[2]);
+    my ($xmlSrc, $smsDestFile, $mmsDestDir) = ($_[1], $_[2], $_[3]);
     print "parsing XML\n";
     my $data = parseXML($xmlSrc);
     print "done parsing\n";
