@@ -65,6 +65,7 @@ sub parseXML($$$){
   while(my $line = <XML_FILE>){
     chomp $line;
     chop $line if $line =~ /\r$/;
+
     next if $line =~ /^<\?xml.*\?>$/;
     next if $line =~ /^<!--/;
     next if $line =~ /-->$/;
@@ -253,8 +254,10 @@ sub createMMSDir($$){
         $fileName = $$part{name};
       }
       if(not defined $fileName or $fileName eq "null" or $fileName =~ /^\s*$/){
-        die "ERROR: missing filename for MMS $$mms{date}\n";
+        $fileName = "";
       }
+      die "ERROR: $fileName cannot contain /s\n" if $fileName =~ /\//;
+
       my $prefix = "PART_" . ($$mms{date} + $attFileIndex) . "_";
       $attFileIndex++;
       $fileName = "${prefix}$fileName";
