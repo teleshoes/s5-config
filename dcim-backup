@@ -13,6 +13,7 @@ my $localDir = "$ENV{HOME}/Code/s5/backup/DCIM";
 my @backups = (
   [ $localDir, "/sdcard/DCIM/Camera",                    "int-cam" ],
   [ $localDir, "/sdcard/DCIM/100ANDRO",                  "int-andro" ],
+  [ $localDir, "/sdcard/DCIM/OpenCamera",                "int-opencam" ],
   [ $localDir, "/storage/$SD_FAT_UUID/DCIM/Camera",      "sd-cam" ],
   [ $localDir, "/storage/$SD_FAT_UUID/DCIM/100ANDRO",    "sd-andro" ],
   [ $localDir, "/storage/$SD_FAT_UUID/DCIM/OpenCamera",  "sd-opencam" ],
