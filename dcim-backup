@@ -18,6 +18,8 @@ my @backups = (
   [ $localDir, "/storage/$SD_FAT_UUID/DCIM/OpenCamera",  "sd-opencam" ],
   [ $localDir, "/sdcard/Pictures/Screenshots",           "screenshots" ],
   [ $localDir, "/sdcard/Movies/Screencasts",             "screencasts" ],
+  [ $localDir, "/sdcard/DCIM/XPERIA/HIGHLIGHT_MOVIE",    "xperia-highlight" ],
+
   #  [ $localDir, "/sdcard/$SNAP_APP_DIR",                  "int-snap" ],
   #  [ $localDir, "/storage/$SD_FAT_UUID/$SNAP_APP_DIR",    "sd-snap" ],
 );
