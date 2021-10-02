@@ -147,7 +147,7 @@ sub parseXML($$$){
     }elsif($line =~ /^\s*<\/mms>\s*$/){
       createMMSDir($destMMSDir, $curMMS);
       $curMMS = undef;
-    }elsif($line =~ /^\s*<part\s+([^<>]+?)(?:\s+data="([^"])*")?\s*\/>$/){
+    }elsif($line =~ /^\s*<part\s+([^<>]+?)(?:\s+data="([^"]*)")?\s*\/>$/){
       my ($atts, $data) = ($1, $2);
       my $ct       = getAtt($atts, 1, "ct",        qr/^.+$/);
       my $name     = getAtt($atts, 1, "name",      qr/^.*$/);
