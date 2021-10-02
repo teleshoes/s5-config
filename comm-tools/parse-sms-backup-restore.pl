@@ -9,8 +9,11 @@ use Digest::MD5 qw(md5_hex);
 use Encode qw(decode_utf8 encode_utf8);
 
 sub parseSMSXML($$$);
+sub parseCallsXML($$);
 sub getAtt($$$$);
 sub formatSMS($);
+sub formatCall($);
+sub formatDurationHMS($);
 sub createMMSDir($$);
 sub cleanBody($);
 sub cleanNumber($);
@@ -37,6 +40,10 @@ my $usage = "Usage:
           date_sent=<DATE_MILLIS>
           subject=<SUBJECT>
           body=<BODY>
+
+  $0 --calls XML_FILE CALLS_OUT_FILE
+    -parse <call> tags into format:
+      <NUMBER>,<DATE_MILLIS>,<INC_OR_OUT_OR_MIS>,<DATE_FMT>,<DURATION_FMT>
 ";
 
 sub main(@){
@@ -44,6 +51,9 @@ sub main(@){
   if(@_ == 4 and $_[0] =~ /^(--sms)$/){
     my ($xmlSrc, $smsDestFile, $mmsDestDir) = ($_[1], $_[2], $_[3]);
     parseSMSXML($xmlSrc, $smsDestFile, $mmsDestDir);
+  }elsif(@_ == 3 and $_[0] =~ /^(--calls)$/){
+    my ($xmlSrc, $callsDestFile) = ($_[1], $_[2]);
+    parseCallsXML($xmlSrc, $callsDestFile);
   }else{
     die $usage;
   }
@@ -195,6 +205,73 @@ sub parseSMSXML($$$){
   die "ERROR: last MMS not written\n" if defined $curMMS;
 }
 
+sub parseCallsXML($$){
+  my ($xmlFile, $destCallsFile) = @_;
+  my $count = 0;
+  my $total = 0;
+
+  my $curCall = undef;
+
+  open CALLS_OUT_FH, "> $destCallsFile" or die "ERROR: could not write $destCallsFile\n$!\n";
+  binmode CALLS_OUT_FH, "encoding(UTF-8)";
+
+  open XML_FILE, "< $xmlFile" or die "ERROR: could not read $xmlFile\n$!\n";
+
+  while(my $line = <XML_FILE>){
+    chomp $line;
+    chop $line if $line =~ /\r$/;
+
+    next if $line =~ /^<\?xml.*\?>$/;
+    next if $line =~ /^<!--/;
+    next if $line =~ /-->$/;
+    next if $line =~ /^\s*$/;
+    next if $line =~ /^To view this file in a more readable format.*$/;
+
+    next if $line =~ /^\s*<\/calls>\s*$/;
+
+    if($line =~ /^\s*<calls(\s+[^<>]*)>\s*$/){
+      $total       = getAtt($line, 1, "count", qr/\d+/);
+    }elsif($line =~ /^\s*<call(\s+[^<>]*)>\s*$/){
+      my $number   = getAtt($line, 1, "number",    qr/^.*$/);
+      my $date     = getAtt($line, 1, "date",      qr/^\d{13}$/);
+      my $type     = getAtt($line, 1, "type",      qr/^(1|2|3|5)$/);
+      my $duration = getAtt($line, 1, "duration",  qr/^\d+$/);
+
+      my $dir;
+      if($type eq 1){
+        $dir = "INC";
+      }elsif($type eq 2){
+        $dir = "OUT";
+      }elsif($type eq 3){
+        $dir = "MIS";
+      }elsif($type eq 5){
+        $dir = "REJ";
+      }else{
+        die "ERROR: invalid call dir type $type\n";
+      }
+
+      $count++;
+      print "$count/$total\n" if $count % 100 == 0 or $count == $total;
+
+      $curCall = {
+        number   => $number,
+        date     => $date,
+        dir      => $dir,
+        duration => $duration,
+      };
+      print CALLS_OUT_FH formatCall($curCall);
+      $curCall = undef;
+    }else{
+      die "ERROR: malformed line:\n$line";
+    }
+  }
+  close XML_FILE;
+
+  close CALLS_OUT_FH;
+
+  die "ERROR: last call not written\n" if defined $curCall;
+}
+
 sub getAtt($$$$){
   my ($xml, $required, $attName, $valRegex) = @_;
   my $val;
@@ -222,6 +299,38 @@ sub formatSMS($){
   $fmt .= "," . "\"" . cleanBody($$sms{body}) . "\"";
   $fmt .= "\n";
   return $fmt;
+}
+
+sub formatCall($){
+  my ($call) = @_;
+  my $fmt = '';
+  $fmt .= ""  . cleanNumber($$call{number});
+  $fmt .= "," . $$call{date};
+  $fmt .= "," . $$call{dir};
+  $fmt .= "," . formatDateMillis($$call{date});
+  $fmt .= "," . formatDurationHMS($$call{duration});
+  $fmt .= "\n";
+  return $fmt;
+}
+
+sub formatDurationHMS($){
+  my ($durSex) = @_;
+  my $isNeg = 0;
+  if($durSex < 0){
+    $isNeg = 1;
+    $durSex = 0-$durSex;
+  }
+  my $h = int($durSex / 60 / 60);
+  my $m = int($durSex / 60) % 60;
+  my $s = int($durSex) % 60;
+  my $durFmt;
+  if($isNeg){
+    $durFmt = sprintf "-%01dh %02dm %02ds", $h, $m, $s;
+  }else{
+    $durFmt = sprintf " %01dh %02dm %02ds", $h, $m, $s;
+  }
+
+  return $durFmt;
 }
 
 sub createMMSDir($$){
