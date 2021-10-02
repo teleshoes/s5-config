@@ -8,7 +8,7 @@ use MIME::Base64 qw(decode_base64);
 use Digest::MD5 qw(md5_hex);
 use Encode qw(decode_utf8 encode_utf8);
 
-sub parseXML($$$);
+sub parseSMSXML($$$);
 sub getAtt($$$$);
 sub formatSMS($);
 sub createMMSDir($$);
@@ -43,13 +43,13 @@ sub main(@){
   $| = 1;
   if(@_ == 4 and $_[0] =~ /^(--sms)$/){
     my ($xmlSrc, $smsDestFile, $mmsDestDir) = ($_[1], $_[2], $_[3]);
-    parseXML($xmlSrc, $smsDestFile, $mmsDestDir);
+    parseSMSXML($xmlSrc, $smsDestFile, $mmsDestDir);
   }else{
     die $usage;
   }
 }
 
-sub parseXML($$$){
+sub parseSMSXML($$$){
   my ($xmlFile, $destSMSFile, $destMMSDir) = @_;
   my $count = 0;
   my $total = 0;
