@@ -232,7 +232,7 @@ sub createMMSDir($$){
 
   my $attFiles = {};
 
-  my $attFileIndex = 1;
+  my $attFileIndex = 0;
 
   for my $part(@{$$mms{parts}}){
     my $ct = $$part{ct};
@@ -258,9 +258,13 @@ sub createMMSDir($$){
       }
       die "ERROR: $fileName cannot contain /s\n" if $fileName =~ /\//;
 
-      my $prefix = "PART_" . ($$mms{date} + $attFileIndex) . "_";
       $attFileIndex++;
-      $fileName = "${prefix}$fileName";
+      my $prefix = "PART_" . ($$mms{date} + $attFileIndex);
+      if($fileName eq ""){
+        $fileName = $prefix;
+      }else{
+        $fileName = "${prefix}_${fileName}";
+      }
       if(defined $$attFiles{$fileName}){
         die "ERROR: duplicate filename for MMS $$mms{date}\n";
       }
