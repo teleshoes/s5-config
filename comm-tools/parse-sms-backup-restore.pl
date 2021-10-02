@@ -322,6 +322,8 @@ sub cleanBody($){
   $body = decode_utf8($body);
   $body = decode_entities($body);
   $body =~ s/"/\\"/g;
+  $body =~ s/\r/\\r/g;
+  $body =~ s/\n/\\n/g;
   return $body;
 }
 
