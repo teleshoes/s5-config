@@ -85,13 +85,14 @@ sub parseXML($$$){
     if($line =~ /^\s*<smses(\s+[^<>]*)>\s*$/){
       $total       = getAtt($line, 1, "count", qr/\d+/);
     }elsif($line =~ /^\s*<sms(\s+[^<>]*)>\s*$/){
-      my $date     = getAtt($line, 1, "date",      qr/^\d+$/);
-      my $dateSent = getAtt($line, 1, "date_sent", qr/^\d+$/);
+      my $date     = getAtt($line, 1, "date",      qr/^\d{13}$/);
+      my $dateSent = getAtt($line, 1, "date_sent", qr/^(\d{10}|\d{13}|0)$/);
       my $type     = getAtt($line, 1, "type",      qr/^(1|2)$/);
       my $addr     = getAtt($line, 1, "address",   qr/^.*$/);
       my $body     = getAtt($line, 1, "body"   ,   qr/^.*$/);
 
-      $dateSent = $date if $dateSent =~ /^0*$/;
+      $dateSent = "${dateSent}000" if $dateSent =~ /^\d{10}$/;
+      $dateSent = $date            if $dateSent =~ /^0*$/;
 
       my $dir = $type == 1 ? "INC" : "OUT";
       $count++;
@@ -107,13 +108,14 @@ sub parseXML($$$){
       print SMS_OUT_FH formatSMS($curSMS);
       $curSMS = undef;
     }elsif($line =~ /^\s*<mms(\s+[^<>]*)>\s*$/){
-      my $date     = getAtt($line, 1, "date",      qr/^\d+$/);
-      my $dateSent = getAtt($line, 1, "date_sent", qr/^\d+$/);
+      my $date     = getAtt($line, 1, "date",      qr/^\d{13}$/);
+      my $dateSent = getAtt($line, 1, "date_sent", qr/^(\d{10}|\d{13}|0)$/);
       my $subject  = getAtt($line, 1, "sub",       qr/^.*$/);
       my $mType    = getAtt($line, 1, "m_type",    qr/^.*$/);
       my $addr     = getAtt($line, 0, "address",   qr/^.*$/);
 
-      $dateSent = $date if $dateSent =~ /^0*$/;
+      $dateSent = "${dateSent}000" if $dateSent =~ /^\d{10}$/;
+      $dateSent = $date            if $dateSent =~ /^0*$/;
 
       $count++;
       print "$count/$total\n" if $count % 100 == 0 or $count == $total;
