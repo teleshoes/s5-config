@@ -285,8 +285,10 @@ sub createMMSDir($$){
   $info .= "date_sent=" . $$mms{dateSent} . "\n";
   $info .= "subject=\"" . cleanBody($$mms{subject}) . "\"\n";
   $info .= "body=\"" . cleanBody($body) . "\"\n";
+  for my $fileName(sort keys %$attFiles){
+    $info .= "att=$fileName\n";
+  }
   $info .= "checksum=" . $md5 . "\n";
-
 
   my $dirName = '';
   $dirName .= ""  . $$mms{date};
