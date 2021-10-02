@@ -316,8 +316,6 @@ sub createMMSDir($$){
 
 sub cleanBody($){
   my ($body) = @_;
-  $body =~ s/^['"]//;
-  $body =~ s/['"]$//;
 
   $body = decode_utf8($body);
   $body = decode_entities($body);
