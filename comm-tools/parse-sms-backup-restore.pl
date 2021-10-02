@@ -6,7 +6,7 @@ use POSIX qw(strftime);
 use HTML::Entities qw(decode_entities);
 use MIME::Base64 qw(decode_base64);
 use Digest::MD5 qw(md5_hex);
-use Encode qw(encode_utf8);
+use Encode qw(decode_utf8 encode_utf8);
 
 sub parseXML($$$);
 sub getAtt($$$$);
@@ -319,6 +319,7 @@ sub cleanBody($){
   $body =~ s/^['"]//;
   $body =~ s/['"]$//;
 
+  $body = decode_utf8($body);
   $body = decode_entities($body);
   $body =~ s/"/\\"/g;
   return $body;
