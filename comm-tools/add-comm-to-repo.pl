@@ -65,9 +65,10 @@ sub main(@){
         next;
       }
       if(defined $newEntriesByLine{$line}){
-        print "WARNING: input file contains exact duplicate: $line";
+        print "input file contains exact duplicate (omitting): $line\n";
         next;
       }
+
       $newEntriesByLine{$line} = $entry;
       if(defined $latestRepoEntry and $$entry{date} <= $$latestRepoEntry{date}){
         #new entry older than last repo entry
@@ -97,7 +98,7 @@ sub main(@){
 
         #no dupe found by dir/num/date/body, adding even though its old
         my ($newLine, $oldLine) = ($$entry{line}, $$latestRepoEntry{line});
-        print STDERR "new entry older than last repo entry:\nnew: ${newLine}old: ${oldLine}";
+        print STDERR "new entry older than last repo entry:\nnew: ${newLine}old: ${oldLine}\n";
       }
 
       my $sortKey = getSortKey $type, $entry;
