@@ -33,6 +33,7 @@ sub main(@){
     my %allEntriesBySortKey;
 
     my %repoEntriesByLine;
+    my %repoEntryListsByDirNumDate;
     my $latestRepoEntry = undef;
     for my $entry(@repoEntries){
       if(not defined $latestRepoEntry or $$latestRepoEntry{date} < $$entry{date}){
@@ -41,6 +42,12 @@ sub main(@){
       my $line = $$entry{line};
       die "duplicate entry in repo: $line" if defined $repoEntriesByLine{$line};
       $repoEntriesByLine{$line} = $entry;
+
+      my $dirNumDate = "$$entry{dir}-$$entry{num}-$$entry{date}";
+      if(not defined $repoEntryListsByDirNumDate{$dirNumDate}){
+        $repoEntryListsByDirNumDate{$dirNumDate} = [];
+      }
+      push @{$repoEntryListsByDirNumDate{$dirNumDate}}, $entry;
 
       my $sortKey = getSortKey $type, $entry;
       if(defined $allEntriesBySortKey{$sortKey}){
@@ -63,6 +70,32 @@ sub main(@){
       }
       $newEntriesByLine{$line} = $entry;
       if(defined $latestRepoEntry and $$entry{date} <= $$latestRepoEntry{date}){
+        #new entry older than last repo entry
+
+        if($type =~ /sms/){
+          #skip if the dir + num + date + body match an existing entry
+          # dateSent is allowed to be different (old entry is kept)
+          my $dirNumDate = "$$entry{dir}-$$entry{num}-$$entry{date}";
+          my @similarRepoEntries = @{$repoEntryListsByDirNumDate{$dirNumDate}};
+          my $dupeRepoEntry;
+          for my $repoEntry(@similarRepoEntries){
+            if(1
+              and $$repoEntry{dir}  eq $$entry{dir}
+              and $$repoEntry{num}  eq $$entry{num}
+              and $$repoEntry{date} eq $$entry{date}
+              and $$repoEntry{body} eq $$entry{body}
+            ){
+              $dupeRepoEntry = $repoEntry;
+              last;
+            }
+          }
+          if(defined $dupeRepoEntry){
+            #print "SKIPPING MATCHED SMS (dateSent-only mismatch):\nnew: $$entry{line}old: $$dupeRepoEntry{line}\n";
+            next;
+          }
+        }
+
+        #no dupe found by dir/num/date/body, adding even though its old
         my ($newLine, $oldLine) = ($$entry{line}, $$latestRepoEntry{line});
         print STDERR "new entry older than last repo entry:\nnew: ${newLine}old: ${oldLine}";
       }
