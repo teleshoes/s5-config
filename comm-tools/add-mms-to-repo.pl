@@ -158,6 +158,7 @@ sub main(@){
   }
 
   my %destInfoByKey;
+  my $latestDestDate = 0;
   for my $destMsgDir(@destMsgDirs){
     my $mmsInfo = parseMMSDir($destMsgDir, $includeFiletype, $includeMd5);
     my $key = getMMSKey($mmsInfo, @mmsKeyFields);
@@ -167,8 +168,12 @@ sub main(@){
     }
 
     $destInfoByKey{$key} = $mmsInfo;
+    $latestDestDate = $$mmsInfo{date} if $$mmsInfo{date} > $latestDestDate;
   }
 
+  my $oldCount = 0;
+  my $newCount = 0;
+  my $skippedCount = 0;
   for my $srcKey(sort keys %srcInfoByKey){
     if(not defined $destInfoByKey{$srcKey}){
       my $srcMMSInfo = $srcInfoByKey{$srcKey};
@@ -178,8 +183,21 @@ sub main(@){
       }else{
         run "cp", "-ar", "$srcMsgDir/", "$destDir/";
       }
+
+      if($$srcMMSInfo{date} < $latestDestDate){
+        $oldCount++;
+      }else{
+        $newCount++;
+      }
+    }else{
+      $skippedCount++;
     }
   }
+
+  print "\n";
+  print "$skippedCount MMS messages skipped\n";
+  print "$newCount MMS messages newer than the latest message on dest\n";
+  print "$oldCount MMS messages older than the latest message on dest\n";
 }
 
 sub parseMMSDir($$$){
