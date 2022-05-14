@@ -196,9 +196,14 @@ sub main(@){
     }
   }
 
-  print "\n";
-  print "MMS messages that are not skipped, but are older than the latest message on dest:\n";
-  print join '', map {"  $_\n"} @oldMMSDirs;
+  print "\n======\n";
+
+  if(@oldMMSDirs > 0){
+    print "\n";
+    print "MMS messages that are not skipped, but are older than the latest message on dest:\n";
+    print join '', map {"  $_\n"} @oldMMSDirs;
+  }
+
 
   print "\n";
   print "$skippedCount MMS messages skipped\n";
