@@ -145,10 +145,10 @@ sub main(@){
     my $mmsInfo = parseMMSDir($srcMsgDir);
     my $key = getMMSKey($mmsInfo, @mmsKeyFields);
     if(defined $srcInfoByKey{$key}){
-      die "ERROR: duplicate src mms key $$mmsInfo{date}\n";
-    }else{
-      $srcInfoByKey{$key} = $mmsInfo;
+      die "ERROR: duplicate src mms fuzzy-key for MMS date=$$mmsInfo{date}\n";
     }
+
+    $srcInfoByKey{$key} = $mmsInfo;
   }
 
   my %destInfoByKey;
@@ -157,9 +157,10 @@ sub main(@){
     my $key = getMMSKey($mmsInfo, @mmsKeyFields);
     if(defined $destInfoByKey{$key}){
       #print STDERR "WARNING: duplicate dest mms key $$mmsInfo{date}\n";
-    }else{
-      $destInfoByKey{$key} = $mmsInfo;
+      next;
     }
+
+    $destInfoByKey{$key} = $mmsInfo;
   }
 
   for my $srcKey(sort keys %srcInfoByKey){
