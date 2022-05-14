@@ -171,7 +171,7 @@ sub main(@){
     my $mmsInfo = parseMMSDir($destMsgDir, $includeFiletype, $includeMd5);
     my $key = getMMSKey($mmsInfo, @mmsKeyFields);
     if(defined $destInfoByKey{$key}){
-      #print STDERR "WARNING: duplicate dest mms key $$mmsInfo{date}\n";
+      #no need to warn, existing duplicates are fine
       next;
     }
 
