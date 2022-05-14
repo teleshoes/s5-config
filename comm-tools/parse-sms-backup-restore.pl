@@ -8,8 +8,10 @@ use MIME::Base64 qw(decode_base64);
 use Digest::MD5 qw(md5_hex);
 use Encode qw(decode_utf8 encode_utf8);
 
-sub parseSMSXML($$$);
-sub parseCallsXML($$);
+sub parseSmsXml($$);
+sub parseMmsXml($$);
+sub parseSmsMmsXml($$$);
+sub parseCallsXml($$);
 sub getAtt($$$$);
 sub formatSMS($);
 sub formatCall($);
@@ -21,10 +23,11 @@ sub formatDateMillis($);
 sub getMd5($$$);
 
 my $usage = "Usage:
-  $0 --sms XML_FILE SMS_OUT_FILE MMS_OUT_DIR
+  $0 --sms XML_FILE SMS_OUT_FILE
     -parse <sms> tags into format:
       <NUMBER>,<DATE_MILLIS>,<DATE_SENT_MILLIS>,<SMS_OR_MMS>,<INC_OR_OUT>,<DATE_FMT>,<TEXT>
 
+  $0 --mms XML_FILE MMS_OUT_DIR
     -parse <mms> tags into individual msg dirs underneath MMS_OUT_DIR
       named:
         <MMS_OUT_DIR>/<DATE_MILLIS>_<PHONE-PHONE-PHONE>_<INC_OR_OUT>_<MD5_OF_CONTENTS>/
@@ -41,6 +44,9 @@ my $usage = "Usage:
           subject=<SUBJECT>
           body=<BODY>
 
+  $0 --sms-mms XML_FILE SMS_OUT_FILE MMS_OUT_DIR
+    -parse both <sms> and <mms> tags, as in --sms and --mms, at the same time
+
   $0 --calls XML_FILE CALLS_OUT_FILE
     -parse <call> tags into format:
       <NUMBER>,<DATE_MILLIS>,<INC_OR_OUT_OR_MIS>,<DATE_FMT>,<DURATION_FMT>
@@ -48,25 +54,45 @@ my $usage = "Usage:
 
 sub main(@){
   $| = 1;
-  if(@_ == 4 and $_[0] =~ /^(--sms)$/){
-    my ($xmlSrc, $smsDestFile, $mmsDestDir) = ($_[1], $_[2], $_[3]);
+  if(@_ == 3 and $_[0] =~ /^(--sms)$/){
+    my ($xmlSrc, $smsDestFile) = ($_[1], $_[2]);
 
-    die "ERROR: $mmsDestDir is not a dir\n" if not -d $mmsDestDir;
     die "ERROR: $smsDestFile file already exists\n" if -e $smsDestFile;
 
-    parseSMSXML($xmlSrc, $smsDestFile, $mmsDestDir);
+    parseSmsXml($xmlSrc, $smsDestFile);
+  }elsif(@_ == 3 and $_[0] =~ /^(--mms)$/){
+    my ($xmlSrc, $mmsDestDir) = ($_[1], $_[2]);
+
+    die "ERROR: $mmsDestDir is not a dir\n" if not -d $mmsDestDir;
+
+    parseMmsXml($xmlSrc, $mmsDestDir);
+  }elsif(@_ == 4 and $_[0] =~ /^(--sms-mms)$/){
+    my ($xmlSrc, $smsDestFile, $mmsDestDir) = ($_[1], $_[2], $_[3]);
+
+    die "ERROR: $smsDestFile file already exists\n" if -e $smsDestFile;
+    die "ERROR: $mmsDestDir is not a dir\n" if not -d $mmsDestDir;
+
+    parseSmsMmsXml($xmlSrc, $smsDestFile, $mmsDestDir);
   }elsif(@_ == 3 and $_[0] =~ /^(--calls)$/){
     my ($xmlSrc, $callsDestFile) = ($_[1], $_[2]);
 
     die "ERROR: $callsDestFile already exists\n" if -e $callsDestFile;
 
-    parseCallsXML($xmlSrc, $callsDestFile);
+    parseCallsXml($xmlSrc, $callsDestFile);
   }else{
     die $usage;
   }
 }
 
-sub parseSMSXML($$$){
+sub parseSmsXml($$){
+  my ($xmlFile, $smsDestFile) = @_;
+  parseSmsMmsXml($xmlFile, $smsDestFile, undef);
+}
+sub parseMmsXml($$){
+  my ($xmlFile, $mmsDestDir) = @_;
+  parseSmsMmsXml($xmlFile, undef, $mmsDestDir);
+}
+sub parseSmsMmsXml($$$){
   my ($xmlFile, $smsDestFile, $mmsDestDir) = @_;
   my $count = 0;
   my $total = 0;
@@ -74,8 +100,10 @@ sub parseSMSXML($$$){
   my $curSMS = undef;
   my $curMMS = undef;
 
-  open SMS_OUT_FH, "> $smsDestFile" or die "ERROR: could not write $smsDestFile\n$!\n";
-  binmode SMS_OUT_FH, "encoding(UTF-8)";
+  if(defined $smsDestFile){
+    open SMS_OUT_FH, "> $smsDestFile" or die "ERROR: could not write $smsDestFile\n$!\n";
+    binmode SMS_OUT_FH, "encoding(UTF-8)";
+  }
 
   open XML_FILE, "< $xmlFile" or die "ERROR: could not read $xmlFile\n$!\n";
 
@@ -102,103 +130,112 @@ sub parseSMSXML($$$){
     if($line =~ /^\s*<smses(\s+[^<>]*)>\s*$/){
       $total       = getAtt($line, 1, "count", qr/\d+/);
     }elsif($line =~ /^\s*<sms(\s+[^<>]*)>\s*$/){
-      my $date     = getAtt($line, 1, "date",      qr/^\d{13}$/);
-      my $dateSent = getAtt($line, 1, "date_sent", qr/^(\d{10}|\d{13}|0)$/);
-      my $type     = getAtt($line, 1, "type",      qr/^(1|2)$/);
-      my $addr     = getAtt($line, 1, "address",   qr/^.*$/);
-      my $body     = getAtt($line, 1, "body"   ,   qr/^.*$/);
+      if(defined $smsDestFile){
+        my $date     = getAtt($line, 1, "date",      qr/^\d{13}$/);
+        my $dateSent = getAtt($line, 1, "date_sent", qr/^(\d{10}|\d{13}|0)$/);
+        my $type     = getAtt($line, 1, "type",      qr/^(1|2)$/);
+        my $addr     = getAtt($line, 1, "address",   qr/^.*$/);
+        my $body     = getAtt($line, 1, "body"   ,   qr/^.*$/);
 
-      $dateSent = "${dateSent}000" if $dateSent =~ /^\d{10}$/;
-      $dateSent = $date            if $dateSent =~ /^0*$/;
+        $dateSent = "${dateSent}000" if $dateSent =~ /^\d{10}$/;
+        $dateSent = $date            if $dateSent =~ /^0*$/;
 
-      my $dir = $type == 1 ? "INC" : "OUT";
+        my $dir = $type == 1 ? "INC" : "OUT";
+
+        $curSMS = {
+          addr     => $addr,
+          date     => $date,
+          dateSent => $dateSent,
+          dir      => $dir,
+          body     => $body,
+        };
+        print SMS_OUT_FH formatSMS($curSMS);
+        $curSMS = undef;
+      }
       $count++;
       print "$count/$total\n" if $count % 100 == 0 or $count >= $total;
-
-      $curSMS = {
-        addr     => $addr,
-        date     => $date,
-        dateSent => $dateSent,
-        dir      => $dir,
-        body     => $body,
-      };
-      print SMS_OUT_FH formatSMS($curSMS);
-      $curSMS = undef;
     }elsif($line =~ /^\s*<mms(\s+[^<>]*)>\s*$/){
-      my $date     = getAtt($line, 1, "date",      qr/^\d{13}$/);
-      my $dateSent = getAtt($line, 1, "date_sent", qr/^(\d{10}|\d{13}|0)$/);
-      my $subject  = getAtt($line, 1, "sub",       qr/^.*$/);
-      my $mType    = getAtt($line, 1, "m_type",    qr/^.*$/);
-      my $addr     = getAtt($line, 0, "address",   qr/^.*$/);
+      if(defined $mmsDestDir){
+        my $date     = getAtt($line, 1, "date",      qr/^\d{13}$/);
+        my $dateSent = getAtt($line, 1, "date_sent", qr/^(\d{10}|\d{13}|0)$/);
+        my $subject  = getAtt($line, 1, "sub",       qr/^.*$/);
+        my $mType    = getAtt($line, 1, "m_type",    qr/^.*$/);
+        my $addr     = getAtt($line, 0, "address",   qr/^.*$/);
 
-      $dateSent = "${dateSent}000" if $dateSent =~ /^\d{10}$/;
-      $dateSent = $date            if $dateSent =~ /^0*$/;
+        $dateSent = "${dateSent}000" if $dateSent =~ /^\d{10}$/;
+        $dateSent = $date            if $dateSent =~ /^0*$/;
 
+        $subject = "" if $subject eq "null";
+
+        my $dir;
+        if($mType == 128){
+          $dir = "OUT";
+        }elsif($mType == 132){
+          $dir = "INC";
+        }elsif($mType == 130){
+          $dir = "NTF";
+        }else{
+          die "ERROR: unknown MMS direction type '$mType'\n$line";
+        }
+
+        die "ERROR: missing </mms> tag\n" if defined $curMMS;
+        $curMMS = {
+          subject    => $subject,
+          dir        => $dir,
+          date       => $date,
+          dateSent   => $dateSent,
+          mainAddr   => $addr,
+          sender     => undef,
+          recipients => [],
+          parts      => [],
+        };
+      }
       $count++;
       print "$count/$total\n" if $count % 100 == 0 or $count >= $total;
-
-      $subject = "" if $subject eq "null";
-
-      my $dir;
-      if($mType == 128){
-        $dir = "OUT";
-      }elsif($mType == 132){
-        $dir = "INC";
-      }elsif($mType == 130){
-        $dir = "NTF";
-      }else{
-        die "ERROR: unknown MMS direction type '$mType'\n$line";
-      }
-
-      die "ERROR: missing </mms> tag\n" if defined $curMMS;
-      $curMMS = {
-        subject    => $subject,
-        dir        => $dir,
-        date       => $date,
-        dateSent   => $dateSent,
-        mainAddr   => $addr,
-        sender     => undef,
-        recipients => [],
-        parts      => [],
-      };
     }elsif($line =~ /^\s*<\/mms>\s*$/){
-      createMMSDir($mmsDestDir, $curMMS);
-      $curMMS = undef;
-    }elsif($line =~ /^\s*<part\s+([^<>]+?)(?:\s+data="([^"]*)")?\s*\/>$/){
-      my ($atts, $data) = ($1, $2);
-      my $ct       = getAtt($atts, 1, "ct",        qr/^.+$/);
-      my $name     = getAtt($atts, 1, "name",      qr/^.*$/);
-      my $cl       = getAtt($atts, 1, "cl",        qr/^.*$/);
-      my $text     = getAtt($atts, 1, "text",      qr/^.*$/);
-
-      if($atts =~ /data=['"]/){
-        die "ERROR: att 'data' must be last in <part> and use \"s (optimization)\n";
+      if(defined $mmsDestDir){
+        createMMSDir($mmsDestDir, $curMMS);
+        $curMMS = undef;
       }
-      die "ERROR: <part> outside of <mms>\n" if not defined $curMMS;
-      $data = decode_base64($data) if defined $data;
+    }elsif($line =~ /^\s*<part\s+([^<>]+?)(?:\s+data="([^"]*)")?\s*\/>$/){
+      if(defined $mmsDestDir){
+        my ($atts, $data) = ($1, $2);
+        my $ct       = getAtt($atts, 1, "ct",        qr/^.+$/);
+        my $name     = getAtt($atts, 1, "name",      qr/^.*$/);
+        my $cl       = getAtt($atts, 1, "cl",        qr/^.*$/);
+        my $text     = getAtt($atts, 1, "text",      qr/^.*$/);
 
-      push @{$$curMMS{parts}}, {
-        ct   => $ct,
-        name => $name,
-        cl   => $cl,
-        text => $text,
-        data => $data,
-      };
-    }elsif($line =~ /^\s*<addr(\s+[^<>]*)>\s*$/){
-      my $addr     = getAtt($line, 1, "address",   qr/^.*$/);
-      my $type     = getAtt($line, 1, "type",      qr/^\d+$/);
-      die "ERROR: <addr> outside of <mms>\n" if not defined $curMMS;
-      if($type =~ /^(137)$/){
-        #from=137
-        if(defined $$curMMS{sender}){
-          die "ERROR: too many 'from' addresses:\n$line";
+        if($atts =~ /data=['"]/){
+          die "ERROR: att 'data' must be last in <part> and use \"s (optimization)\n";
         }
-        $$curMMS{sender} = $addr;
-      }elsif($type =~ /^(151|130|129)$/){
-        #to=151, cc=130, bcc=129
-        push @{$$curMMS{recipients}}, $addr;
-      }else{
-        die "ERROR: invalid MMS addr direction type:\n$line";
+        die "ERROR: <part> outside of <mms>\n" if not defined $curMMS;
+        $data = decode_base64($data) if defined $data;
+
+        push @{$$curMMS{parts}}, {
+          ct   => $ct,
+          name => $name,
+          cl   => $cl,
+          text => $text,
+          data => $data,
+        };
+      }
+    }elsif($line =~ /^\s*<addr(\s+[^<>]*)>\s*$/){
+      if(defined $mmsDestDir){
+        my $addr     = getAtt($line, 1, "address",   qr/^.*$/);
+        my $type     = getAtt($line, 1, "type",      qr/^\d+$/);
+        die "ERROR: <addr> outside of <mms>\n" if not defined $curMMS;
+        if($type =~ /^(137)$/){
+          #from=137
+          if(defined $$curMMS{sender}){
+            die "ERROR: too many 'from' addresses:\n$line";
+          }
+          $$curMMS{sender} = $addr;
+        }elsif($type =~ /^(151|130|129)$/){
+          #to=151, cc=130, bcc=129
+          push @{$$curMMS{recipients}}, $addr;
+        }else{
+          die "ERROR: invalid MMS addr direction type:\n$line";
+        }
       }
     }else{
       die "ERROR: malformed line:\n$line";
