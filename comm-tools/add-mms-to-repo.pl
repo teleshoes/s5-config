@@ -53,20 +53,22 @@ my $USAGE = "Usage:
     --att-filetype=MATCH_RULE
       control how att filetypes are used to match
       filetypes are determined by the actual file contents, with File::Type perl module
+      (also determines whether filetypes are calculated at all, for a small speedup/slowdown)
       MATCH_RULE
         exact:    must match exactly
         ignored:  ignored (this is the default)
 
     --att-md5=MATCH_RULE
       control how att file content MD5 sums are used to match
+      (also determines whether MD5s are calculated at all, for a large speedup/slowdown)
       MATCH_RULE
         exact:    must match exactly (this is the default)
         ignored:  ignored
 ";
 
-sub parseMMSDir($);
+sub parseMMSDir($$$);
 sub getMMSKey($@);
-sub getAttFileInfo($$);
+sub getAttFileInfo($$$$);
 sub filetype($);
 sub md5($);
 sub run(@);
@@ -121,6 +123,9 @@ sub main(@){
 
   die "$USAGE\nERROR: missing MMS_SRC_DIR\n" if not defined $srcDir;
 
+  my $includeFiletype = $attFileType eq $MATCH_RULE_IGNORED ? 0 : 1;
+  my $includeMd5 = $attMD5 eq $MATCH_RULE_IGNORED ? 0 : 1;
+
   my @mmsKeyFields;
   push @mmsKeyFields, "date";
   push @mmsKeyFields, "from";
@@ -142,7 +147,8 @@ sub main(@){
 
   my %srcInfoByKey;
   for my $srcMsgDir(@srcMsgDirs){
-    my $mmsInfo = parseMMSDir($srcMsgDir);
+    my $mmsInfo = parseMMSDir($srcMsgDir, $includeFiletype, $includeMd5);
+
     my $key = getMMSKey($mmsInfo, @mmsKeyFields);
     if(defined $srcInfoByKey{$key}){
       die "ERROR: duplicate src mms fuzzy-key for MMS date=$$mmsInfo{date}\n";
@@ -153,7 +159,7 @@ sub main(@){
 
   my %destInfoByKey;
   for my $destMsgDir(@destMsgDirs){
-    my $mmsInfo = parseMMSDir($destMsgDir);
+    my $mmsInfo = parseMMSDir($destMsgDir, $includeFiletype, $includeMd5);
     my $key = getMMSKey($mmsInfo, @mmsKeyFields);
     if(defined $destInfoByKey{$key}){
       #print STDERR "WARNING: duplicate dest mms key $$mmsInfo{date}\n";
@@ -176,8 +182,8 @@ sub main(@){
   }
 }
 
-sub parseMMSDir($){
-  my ($msgDir) = @_;
+sub parseMMSDir($$$){
+  my ($msgDir, $includeFiletype, $includeMd5) = @_;
   my $infoFile = "$msgDir/info";
   die "ERROR: missing info $infoFile\n" if not -f $infoFile;
   open FH, "< $infoFile" or die "ERROR: could not read $infoFile\n$!\n";
@@ -210,7 +216,7 @@ sub parseMMSDir($){
       $$info{body} = $1;
     }elsif($line =~ /^att=(.+)$/){
       my $attFileName = $1;
-      push @{$$info{att}}, getAttFileInfo($msgDir, $attFileName);
+      push @{$$info{att}}, getAttFileInfo($msgDir, $attFileName, $includeFiletype, $includeMd5);
     }elsif($line =~ /^checksum=([0-9a-f]{32})$/){
       $$info{checksum} = $1;
     }else{
@@ -247,8 +253,8 @@ sub getMMSKey($@){
   return $key;
 }
 
-sub getAttFileInfo($$){
-  my ($msgDir, $attFileName) = @_;
+sub getAttFileInfo($$$$){
+  my ($msgDir, $attFileName, $includeFiletype, $includeMd5) = @_;
   my $file = "$msgDir/$attFileName";
   if(not -f $file){
     die "ERROR: missing att file $file\n";
@@ -261,9 +267,9 @@ sub getAttFileInfo($$){
     $unprefixedFileName =~ s/^PART_\d+_//;
   }
 
-  my $attFileType = filetype($file);
+  my $attFileType = $includeFiletype ? filetype($file) : "";
 
-  my $md5 = md5($file);
+  my $md5 = $includeMd5 ? md5($file) : "";
 
   return {
     file               => $file,
