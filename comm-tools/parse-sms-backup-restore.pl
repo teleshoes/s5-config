@@ -113,7 +113,7 @@ sub parseSMSXML($$$){
 
       my $dir = $type == 1 ? "INC" : "OUT";
       $count++;
-      print "$count/$total\n" if $count % 100 == 0 or $count == $total;
+      print "$count/$total\n" if $count % 100 == 0 or $count >= $total;
 
       $curSMS = {
         addr     => $addr,
@@ -135,7 +135,7 @@ sub parseSMSXML($$$){
       $dateSent = $date            if $dateSent =~ /^0*$/;
 
       $count++;
-      print "$count/$total\n" if $count % 100 == 0 or $count == $total;
+      print "$count/$total\n" if $count % 100 == 0 or $count >= $total;
 
       $subject = "" if $subject eq "null";
 
@@ -258,7 +258,7 @@ sub parseCallsXML($$){
       }
 
       $count++;
-      print "$count/$total\n" if $count % 100 == 0 or $count == $total;
+      print "$count/$total\n" if $count % 100 == 0 or $count >= $total;
 
       $curCall = {
         number   => $number,
