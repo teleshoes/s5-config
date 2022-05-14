@@ -2,6 +2,26 @@
 use strict;
 use warnings;
 use Digest::MD5;
+use File::Basename qw(basename);
+
+my $BACKUP_DIR = "$ENV{HOME}/Code/s5/backup";
+my $MMS_REPO_DIR = "$BACKUP_DIR/backup-mms/repo";
+
+my $EXEC = basename $0;
+
+my $USAGE = "Usage:
+  $EXEC -h|--help
+    show this message
+
+  $EXEC [OPTS] MMS_SRC_DIR
+    -parse MMS messages in MMS_DIR and $MMS_REPO_DIR
+    -identify duplicates using fuzzy matching
+    -print commands to copy any new messages into $MMS_REPO_DIR
+
+  OPTS
+    --dest-dir=MMS_DEST_DIR
+      use MMS_DEST_DIR instead of $MMS_REPO_DIR
+";
 
 sub parseMMSDir($);
 sub getMMSKey($);
@@ -10,8 +30,22 @@ sub md5($);
 sub run(@);
 
 sub main(@){
-  my ($srcDir, $destDir) = @_;
-  die "Usage: $0 SRC_DIR DEST_DIR\n" if not -d $srcDir or not -d $destDir;
+  my $srcDir;
+  my $destDir = $MMS_REPO_DIR;
+  while(@_ > 0){
+    my $arg = shift @_;
+    if($arg =~ /^(-h|--help)$/){
+      print $USAGE;
+      exit 0;
+    }elsif(-d $arg){
+      die "ERROR: more than one MMS_SRC_DIR given\n" if defined $srcDir;
+      $srcDir = $arg;
+    }else{
+      die "$USAGE\nERROR: unknown arg $arg\n";
+    }
+  }
+
+  die "$USAGE\nERROR: missing MMS_SRC_DIR\n" if not defined $srcDir;
 
   my @srcMsgDirs = glob "$srcDir/*/";
   my @destMsgDirs = glob "$destDir/*/";
