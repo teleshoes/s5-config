@@ -50,9 +50,16 @@ sub main(@){
   $| = 1;
   if(@_ == 4 and $_[0] =~ /^(--sms)$/){
     my ($xmlSrc, $smsDestFile, $mmsDestDir) = ($_[1], $_[2], $_[3]);
+
+    die "ERROR: $mmsDestDir is not a dir\n" if not -d $mmsDestDir;
+    die "ERROR: $smsDestFile file already exists\n" if -e $smsDestFile;
+
     parseSMSXML($xmlSrc, $smsDestFile, $mmsDestDir);
   }elsif(@_ == 3 and $_[0] =~ /^(--calls)$/){
     my ($xmlSrc, $callsDestFile) = ($_[1], $_[2]);
+
+    die "ERROR: $callsDestFile already exists\n" if -e $callsDestFile;
+
     parseCallsXML($xmlSrc, $callsDestFile);
   }else{
     die $usage;
