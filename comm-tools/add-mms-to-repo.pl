@@ -171,6 +171,7 @@ sub main(@){
     $latestDestDate = $$mmsInfo{date} if $$mmsInfo{date} > $latestDestDate;
   }
 
+  my @oldMMSDirs;
   my $oldCount = 0;
   my $newCount = 0;
   my $skippedCount = 0;
@@ -186,6 +187,7 @@ sub main(@){
 
       if($$srcMMSInfo{date} < $latestDestDate){
         $oldCount++;
+        push @oldMMSDirs, $srcMsgDir;
       }else{
         $newCount++;
       }
@@ -193,6 +195,10 @@ sub main(@){
       $skippedCount++;
     }
   }
+
+  print "\n";
+  print "MMS messages that are not skipped, but are older than the latest message on dest:\n";
+  print join '', map {"  $_\n"} @oldMMSDirs;
 
   print "\n";
   print "$skippedCount MMS messages skipped\n";
