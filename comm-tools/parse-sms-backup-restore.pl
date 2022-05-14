@@ -67,14 +67,14 @@ sub main(@){
 }
 
 sub parseSMSXML($$$){
-  my ($xmlFile, $destSMSFile, $destMMSDir) = @_;
+  my ($xmlFile, $smsDestFile, $mmsDestDir) = @_;
   my $count = 0;
   my $total = 0;
 
   my $curSMS = undef;
   my $curMMS = undef;
 
-  open SMS_OUT_FH, "> $destSMSFile" or die "ERROR: could not write $destSMSFile\n$!\n";
+  open SMS_OUT_FH, "> $smsDestFile" or die "ERROR: could not write $smsDestFile\n$!\n";
   binmode SMS_OUT_FH, "encoding(UTF-8)";
 
   open XML_FILE, "< $xmlFile" or die "ERROR: could not read $xmlFile\n$!\n";
@@ -162,7 +162,7 @@ sub parseSMSXML($$$){
         parts      => [],
       };
     }elsif($line =~ /^\s*<\/mms>\s*$/){
-      createMMSDir($destMMSDir, $curMMS);
+      createMMSDir($mmsDestDir, $curMMS);
       $curMMS = undef;
     }elsif($line =~ /^\s*<part\s+([^<>]+?)(?:\s+data="([^"]*)")?\s*\/>$/){
       my ($atts, $data) = ($1, $2);
@@ -213,13 +213,13 @@ sub parseSMSXML($$$){
 }
 
 sub parseCallsXML($$){
-  my ($xmlFile, $destCallsFile) = @_;
+  my ($xmlFile, $callsDestFile) = @_;
   my $count = 0;
   my $total = 0;
 
   my $curCall = undef;
 
-  open CALLS_OUT_FH, "> $destCallsFile" or die "ERROR: could not write $destCallsFile\n$!\n";
+  open CALLS_OUT_FH, "> $callsDestFile" or die "ERROR: could not write $callsDestFile\n$!\n";
   binmode CALLS_OUT_FH, "encoding(UTF-8)";
 
   open XML_FILE, "< $xmlFile" or die "ERROR: could not read $xmlFile\n$!\n";
