@@ -145,13 +145,21 @@ sub main(@){
   my @srcMsgDirs = glob "$srcDir/*/";
   my @destMsgDirs = glob "$destDir/*/";
 
+  my $warningMsg = "";
+
   my %srcInfoByKey;
   for my $srcMsgDir(@srcMsgDirs){
     my $mmsInfo = parseMMSDir($srcMsgDir, $includeFiletype, $includeMd5);
 
     my $key = getMMSKey($mmsInfo, @mmsKeyFields);
     if(defined $srcInfoByKey{$key}){
-      die "ERROR: duplicate src mms fuzzy-key for MMS date=$$mmsInfo{date}\n";
+      my $msg = "WARNING: duplicate src mms fuzzy-key (only the first one will be added)\n"
+        . "  $srcInfoByKey{$key}{msgDir}\n"
+        . "  $srcMsgDir\n"
+        . "\n"
+      ;
+      $warningMsg .= $msg;
+      print STDERR $msg;
     }
 
     $srcInfoByKey{$key} = $mmsInfo;
@@ -204,6 +212,9 @@ sub main(@){
     print join '', map {"  $_\n"} @oldMMSDirs;
   }
 
+  if(length $warningMsg > 0){
+    print "\n$warningMsg";
+  }
 
   print "\n";
   print "$skippedCount MMS messages skipped\n";
