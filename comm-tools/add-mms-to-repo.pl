@@ -16,7 +16,16 @@ my $USAGE = "Usage:
 
   $EXEC [OPTS] MMS_SRC_DIR
     -parse MMS messages in MMS_DIR and $MMS_REPO_DIR
-    -identify duplicates using fuzzy matching
+    -identify duplicates using fuzzy matching:
+      -from:     treat from=\"\" as equal to from=\"None\", and then match exactly
+      -to:       must match exactly, in order
+      -dir:      must match exactly
+      -date:     must match exactly
+      -dateSent: must match exactly
+      -subject:  must match exactly
+      -body:     must match exactly
+      -atts:     file content MD5 sums must match exactly, in order,
+                 but filenames and filetypes are ignored by default
     -copy any new messages into $MMS_REPO_DIR
 
   OPTS
