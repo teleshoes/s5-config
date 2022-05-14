@@ -16,9 +16,12 @@ my $USAGE = "Usage:
   $EXEC [OPTS] MMS_SRC_DIR
     -parse MMS messages in MMS_DIR and $MMS_REPO_DIR
     -identify duplicates using fuzzy matching
-    -print commands to copy any new messages into $MMS_REPO_DIR
+    -copy any new messages into $MMS_REPO_DIR
 
   OPTS
+    -n|-s|--simulate|--no-act|--dry-run
+      print the copy commands instead of just running them
+
     --dest-dir=MMS_DEST_DIR
       use MMS_DEST_DIR instead of $MMS_REPO_DIR
 ";
@@ -30,6 +33,8 @@ sub md5($);
 sub run(@);
 
 sub main(@){
+  my $simulate = 0;
+
   my $srcDir;
   my $destDir = $MMS_REPO_DIR;
   while(@_ > 0){
@@ -37,6 +42,11 @@ sub main(@){
     if($arg =~ /^(-h|--help)$/){
       print $USAGE;
       exit 0;
+    }elsif($arg =~ /^-n|-s|--simulate|--no-act|--dry-run$/){
+      $simulate = 1;
+    }elsif($arg =~ /^--dest-dir=(.+)$/){
+      $destDir = $1;
+      die "ERROR: $destDir is not a directory\n" if not -d $destDir;
     }elsif(-d $arg){
       die "ERROR: more than one MMS_SRC_DIR given\n" if defined $srcDir;
       $srcDir = $arg;
@@ -74,8 +84,13 @@ sub main(@){
 
   for my $srcKey(sort keys %srcInfoByKey){
     if(not defined $destInfoByKey{$srcKey}){
-      my $srcMsgDir = ${$srcInfoByKey{$srcKey}}{msgDir};
-      run "echo", "cp", "-ar", "$srcMsgDir/", "$destDir/";
+      my $srcMMSInfo = $srcInfoByKey{$srcKey};
+      my $srcMsgDir = $$srcMMSInfo{msgDir};
+      if($simulate){
+        print "#cp -ar $srcMsgDir/ $destDir/\n";
+      }else{
+        run "cp", "-ar", "$srcMsgDir/", "$destDir/";
+      }
     }
   }
 }
