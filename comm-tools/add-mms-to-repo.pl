@@ -3,6 +3,7 @@ use strict;
 use warnings;
 use Digest::MD5;
 use File::Basename qw(basename);
+use File::Type;
 
 my $BACKUP_DIR = "$ENV{HOME}/Code/s5/backup";
 my $MMS_REPO_DIR = "$BACKUP_DIR/backup-mms/repo";
@@ -29,6 +30,7 @@ my $USAGE = "Usage:
 sub parseMMSDir($);
 sub getMMSKey($);
 sub getAttFileInfo($$);
+sub filetype($);
 sub md5($);
 sub run(@);
 
@@ -172,16 +174,25 @@ sub getAttFileInfo($$){
     $unprefixedFileName =~ s/^PART_\d+_//;
   }
 
+  my $attFileType = filetype($file);
+
   my $md5 = md5($file);
 
   return {
     file               => $file,
     attFileName        => $attFileName,
+    attFileType        => $attFileType,
     unprefixedFileName => $unprefixedFileName,
     mtime              => $stat[9],
     size               => $stat[7],
     md5                => $md5,
   };
+}
+
+sub filetype($){
+  my ($file) = @_;
+  my $mimetype = File::Type->new->mime_type($file);
+  return $mimetype;
 }
 
 sub md5($){
