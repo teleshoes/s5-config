@@ -18,8 +18,8 @@ my @backups = (
   [ 'REQ', $localDir, "/sdcard/Movies/Screencasts",             "screencasts" ],
   [ 'REQ', $localDir, "/sdcard/DCIM/XPERIA/HIGHLIGHT_MOVIE",    "xperia-highlight" ],
 
-  #  [ 'REQ', $localDir, "/sdcard/$SNAP_APP_DIR",                  "int-snap" ],
-  #  [ 'REQ', $localDir, "/storage/$SD_FAT_UUID/$SNAP_APP_DIR",    "sd-snap" ],
+  [ 'OPT', $localDir, "/sdcard/$SNAP_APP_DIR",                  "int-snap" ],
+  [ 'OPT', $localDir, "/storage/$SD_FAT_UUID/$SNAP_APP_DIR",    "sd-snap" ],
 
   [ 'REQ', $localDir, "/sdcard/DCIM/100ANDRO",                  "int-andro" ],
   [ 'REQ', $localDir, "/storage/$SD_FAT_UUID/DCIM/100ANDRO",    "sd-andro" ],
