@@ -14,8 +14,8 @@ my @backups = (
   [ 'REQ', $localDir, "/sdcard/DCIM/Camera",                    "int-cam" ],
   [ 'REQ', $localDir, "/storage/$SD_FAT_UUID/DCIM/Camera",      "sd-cam" ],
   [ 'REQ', $localDir, "/storage/$SD_FAT_UUID/DCIM/OpenCamera",  "sd-opencam" ],
-  [ 'REQ', $localDir, "/sdcard/DCIM/Screenshots",               "screenshots" ],
-  [ 'REQ', $localDir, "/sdcard/DCIM/Facebook",                  "int-fb" ],
+  [ 'OPT', $localDir, "/sdcard/DCIM/Screenshots",               "screenshots" ],
+  [ 'OPT', $localDir, "/sdcard/DCIM/Facebook",                  "int-fb" ],
 
   #old
   [ 'OPT', $localDir, "/sdcard/Pictures/Screenshots",           "screenshots-pix" ],
