@@ -58,8 +58,20 @@ sub main(@){
 sub dcimBackup($$$){
   my ($localDCIM, $remoteDCIM, $backupSuffix) = @_;
 
-  die "local $localDCIM does not exist\n" if not -d $localDCIM;
-  die "remote $remoteDCIM does not exist\n" if not remoteDirExists $remoteDCIM;
+  my $isFailure = 0;
+  my $failureMsg = undef;
+  if(not -d $localDCIM){
+    $isFailure = 1;
+    $failureMsg = "local $localDCIM does not exist\n";
+  }elsif(not remoteDirExists $remoteDCIM){
+    $isFailure = 1;
+    $failureMsg = "remote $remoteDCIM does not exist\n";
+  }
+
+  if($isFailure){
+    die "\n\nERROR: $failureMsg\n";
+  }
+
   chdir $localDCIM;
   print "\n\n===============\n";
   print "Fetching remote md5sums: $remoteDCIM\n";
