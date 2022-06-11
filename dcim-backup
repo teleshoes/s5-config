@@ -18,17 +18,17 @@ my @backups = (
   [ 'REQ', $localDir, "/sdcard/DCIM/Facebook",                  "int-fb" ],
 
   #old
-  [ 'REQ', $localDir, "/sdcard/Pictures/Screenshots",           "screenshots-pix" ],
-  [ 'REQ', $localDir, "/sdcard/Movies/Screencasts",             "screencasts" ],
-  [ 'REQ', $localDir, "/sdcard/DCIM/XPERIA/HIGHLIGHT_MOVIE",    "xperia-highlight" ],
+  [ 'OPT', $localDir, "/sdcard/Pictures/Screenshots",           "screenshots-pix" ],
+  [ 'OPT', $localDir, "/sdcard/Movies/Screencasts",             "screencasts" ],
+  [ 'OPT', $localDir, "/sdcard/DCIM/XPERIA/HIGHLIGHT_MOVIE",    "xperia-highlight" ],
 
   #really old
   [ 'OPT', $localDir, "/sdcard/$SNAP_APP_DIR",                  "int-snap" ],
   [ 'OPT', $localDir, "/storage/$SD_FAT_UUID/$SNAP_APP_DIR",    "sd-snap" ],
 
-  [ 'REQ', $localDir, "/sdcard/DCIM/100ANDRO",                  "int-andro" ],
-  [ 'REQ', $localDir, "/storage/$SD_FAT_UUID/DCIM/100ANDRO",    "sd-andro" ],
-  [ 'REQ', $localDir, "/sdcard/DCIM/OpenCamera",                "int-opencam" ],
+  [ 'OPT', $localDir, "/sdcard/DCIM/100ANDRO",                  "int-andro" ],
+  [ 'OPT', $localDir, "/storage/$SD_FAT_UUID/DCIM/100ANDRO",    "sd-andro" ],
+  [ 'OPT', $localDir, "/sdcard/DCIM/OpenCamera",                "int-opencam" ],
 );
 my $remoteTmpDir = "/storage/$SD_FAT_UUID/dcim-tmp";
 my $localTmpDir = "$ENV{HOME}/dcim-tmp";
