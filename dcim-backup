@@ -11,25 +11,25 @@ my $SNAP_APP_DIR = "Android/data/org.lineageos.snap/files";
 
 my $localDir = "$ENV{HOME}/Code/s5/backup/DCIM";
 my @backups = (
-  [ $localDir, "/sdcard/DCIM/Camera",                    "int-cam" ],
-  [ $localDir, "/sdcard/DCIM/100ANDRO",                  "int-andro" ],
-  [ $localDir, "/sdcard/DCIM/OpenCamera",                "int-opencam" ],
-  [ $localDir, "/storage/$SD_FAT_UUID/DCIM/Camera",      "sd-cam" ],
-  [ $localDir, "/storage/$SD_FAT_UUID/DCIM/100ANDRO",    "sd-andro" ],
-  [ $localDir, "/storage/$SD_FAT_UUID/DCIM/OpenCamera",  "sd-opencam" ],
-  [ $localDir, "/sdcard/Pictures/Screenshots",           "screenshots" ],
-  [ $localDir, "/sdcard/Movies/Screencasts",             "screencasts" ],
-  [ $localDir, "/sdcard/DCIM/XPERIA/HIGHLIGHT_MOVIE",    "xperia-highlight" ],
+  [ 'REQ', $localDir, "/sdcard/DCIM/Camera",                    "int-cam" ],
+  [ 'REQ', $localDir, "/sdcard/DCIM/100ANDRO",                  "int-andro" ],
+  [ 'REQ', $localDir, "/sdcard/DCIM/OpenCamera",                "int-opencam" ],
+  [ 'REQ', $localDir, "/storage/$SD_FAT_UUID/DCIM/Camera",      "sd-cam" ],
+  [ 'REQ', $localDir, "/storage/$SD_FAT_UUID/DCIM/100ANDRO",    "sd-andro" ],
+  [ 'REQ', $localDir, "/storage/$SD_FAT_UUID/DCIM/OpenCamera",  "sd-opencam" ],
+  [ 'REQ', $localDir, "/sdcard/Pictures/Screenshots",           "screenshots" ],
+  [ 'REQ', $localDir, "/sdcard/Movies/Screencasts",             "screencasts" ],
+  [ 'REQ', $localDir, "/sdcard/DCIM/XPERIA/HIGHLIGHT_MOVIE",    "xperia-highlight" ],
 
-  #  [ $localDir, "/sdcard/$SNAP_APP_DIR",                  "int-snap" ],
-  #  [ $localDir, "/storage/$SD_FAT_UUID/$SNAP_APP_DIR",    "sd-snap" ],
+  #  [ 'REQ', $localDir, "/sdcard/$SNAP_APP_DIR",                  "int-snap" ],
+  #  [ 'REQ', $localDir, "/storage/$SD_FAT_UUID/$SNAP_APP_DIR",    "sd-snap" ],
 );
 my $remoteTmpDir = "/storage/$SD_FAT_UUID/dcim-tmp";
 my $localTmpDir = "$ENV{HOME}/dcim-tmp";
 
 my @filetypes = qw(jpg jpeg png gif mp4);
 
-sub dcimBackup($$$);
+sub dcimBackup($$$$);
 sub reorganizeBackedUpRemotes($$$$$);
 sub md5sumMaps(\@);
 sub runMd5sum($);
@@ -46,17 +46,17 @@ sub remoteDirExists($;$);
 
 sub main(@){
   for my $backup(@backups){
-    my ($localDCIM, $remoteDCIM, $backupSuffix) = @$backup;
-    dcimBackup($localDCIM, $remoteDCIM, $backupSuffix);
+    my ($reqType, $localDCIM, $remoteDCIM, $backupSuffix) = @$backup;
+    dcimBackup($reqType, $localDCIM, $remoteDCIM, $backupSuffix);
   }
   for my $backup(@backups){
-    my ($localDCIM, $remoteDCIM, $backupSuffix) = @$backup;
+    my ($reqType, $localDCIM, $remoteDCIM, $backupSuffix) = @$backup;
     checkMissing($localDCIM, $remoteDCIM);
   }
 }
 
-sub dcimBackup($$$){
-  my ($localDCIM, $remoteDCIM, $backupSuffix) = @_;
+sub dcimBackup($$$$){
+  my ($reqType, $localDCIM, $remoteDCIM, $backupSuffix) = @_;
 
   my $isFailure = 0;
   my $failureMsg = undef;
@@ -69,7 +69,12 @@ sub dcimBackup($$$){
   }
 
   if($isFailure){
-    die "\n\nERROR: $failureMsg\n";
+    if($reqType eq 'OPT'){
+      print "\nWARNING: $failureMsg\n";
+      return;
+    }else{
+      die "\n\nERROR: $failureMsg\n";
+    }
   }
 
   chdir $localDCIM;
