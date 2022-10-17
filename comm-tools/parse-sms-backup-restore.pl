@@ -249,7 +249,7 @@ sub parseSmsMmsXml($$$){
   die "ERROR: last MMS not written\n" if defined $curMMS;
 }
 
-sub parseCallsXML($$){
+sub parseCallsXml($$){
   my ($xmlFile, $callsDestFile) = @_;
   my $count = 0;
   my $total = 0;
