@@ -423,7 +423,12 @@ sub getFileKey($){
   my $key = lc $file;
   $key =~ s/^.*\///;
   $key =~ s/^VID_//i;
-  $key =~ s/_[a-z][a-z0-9_\-]*\./\./i;
+  if($key =~ /(_[a-z][a-z0-9_\-]*)\.\w+$/i){
+    my $descSuffix = $1;
+    if($descSuffix !~ /\d{10}|\d{13}|\d\d\d\d-?\d\d-?\d\d/){
+      $key =~ s/($descSuffix)(\.\w+)/$2/i;
+    }
+  }
   $key =~ s/jpeg$/jpg/i;
 
   return $key;
