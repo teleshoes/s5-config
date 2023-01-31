@@ -6,7 +6,7 @@ use Time::HiRes qw(time);
 my $user = "root"; #note that SimpleSSHD ignores the user
 my $ipmagicName = "s5";
 
-my $SD_FAT_UUID = "8D67-6AFB";
+my $SD_FAT_UUID = "6BD5-7233";
 my $SNAP_APP_DIR = "Android/data/org.lineageos.snap/files";
 
 my $localDir = "$ENV{HOME}/Code/s5/backup/DCIM";
