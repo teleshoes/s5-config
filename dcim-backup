@@ -53,7 +53,6 @@ my @backups = (
   [ 'OPT', 'SKP', "$INT/Pictures",                                     "int-pix" ],
   [ 'OPT', 'SKP', "$EXT/Pictures",                                     "sd-pix" ],
   [ 'OPT', 'SKP', "$INT/Movies",                                       "int-mov" ],
-  [ 'OPT', 'SKP', "$EXT/Movies",                                       "sd-mov" ],
 );
 my $remoteTmpDir = "/storage/$SD_FAT_UUID/dcim-tmp";
 my $localTmpDir = "$ENV{HOME}/dcim-tmp";
