@@ -29,7 +29,6 @@ my @backups = (
   [ 'OPT', 'CHK', "$INT/Pictures/Messenger",                           "int-fbmsg" ],
   [ 'OPT', 'CHK', "$EXT/Pictures/Messenger",                           "sd-fbmsg" ],
   [ 'OPT', 'CHK', "$EXT/Pictures/Messages",                            "sd-msgs" ],
-  [ 'OPT', 'CHK', "$EXT/Pictures",                                     "sd-pix" ],
   [ 'OPT', 'CHK', "$INT/Movies/Messenger",                             "int-fbmsgmov" ],
   [ 'OPT', 'CHK', "$EXT/Movies/Messenger",                             "sd-fbmsgmov" ],
 
