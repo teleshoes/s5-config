@@ -37,13 +37,13 @@ my @backups = (
   [ 'OPT', 'CHK', "$EXT/Movies/Screencasts",                           "sd-screencasts" ],
 
   ### facebook
-  [ 'OPT', 'CHK', "$INT/DCIM/Facebook",                                "int-fb" ],
-  [ 'OPT', 'CHK', "$INT/Pictures/Facebook",                            "int-fb2" ],
-  [ 'OPT', 'CHK', "$EXT/Pictures/Facebook",                            "sd-fb2" ],
-  [ 'OPT', 'CHK', "$INT/Pictures/Messenger",                           "int-fbmsg" ],
-  [ 'OPT', 'CHK', "$EXT/Pictures/Messenger",                           "sd-fbmsg" ],
-  [ 'OPT', 'CHK', "$INT/Movies/Messenger",                             "int-fbmsgmov" ],
-  [ 'OPT', 'CHK', "$EXT/Movies/Messenger",                             "sd-fbmsgmov" ],
+  [ 'OPT', 'SKP', "$INT/DCIM/Facebook",                                "int-fb" ],
+  [ 'OPT', 'SKP', "$INT/Pictures/Facebook",                            "int-fb2" ],
+  [ 'OPT', 'SKP', "$EXT/Pictures/Facebook",                            "sd-fb2" ],
+  [ 'OPT', 'SKP', "$INT/Pictures/Messenger",                           "int-fbmsg" ],
+  [ 'OPT', 'SKP', "$EXT/Pictures/Messenger",                           "sd-fbmsg" ],
+  [ 'OPT', 'SKP', "$INT/Movies/Messenger",                             "int-fbmsgmov" ],
+  [ 'OPT', 'SKP', "$EXT/Movies/Messenger",                             "sd-fbmsgmov" ],
 
   ### other apps
   [ 'OPT', 'CHK', "$EXT/Pictures/Messages",                            "sd-msgs" ],
