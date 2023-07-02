@@ -34,10 +34,10 @@ my @backups = (
   [ 'OPT', 'CHK', "$EXT/Movies/Messenger",                             "sd-fbmsgmov" ],
 
   ### top level dirs
-  [ 'OPT', 'CHK', "$INT/Pictures",                                     "int-pix" ],
-  [ 'OPT', 'CHK', "$EXT/Pictures",                                     "sd-pix" ],
-  [ 'OPT', 'CHK', "$INT/Movies",                                       "int-mov" ],
-  [ 'OPT', 'CHK', "$EXT/Movies",                                       "sd-mov" ],
+  [ 'OPT', 'SKP', "$INT/Pictures",                                     "int-pix" ],
+  [ 'OPT', 'SKP', "$EXT/Pictures",                                     "sd-pix" ],
+  [ 'OPT', 'SKP', "$INT/Movies",                                       "int-mov" ],
+  [ 'OPT', 'SKP', "$EXT/Movies",                                       "sd-mov" ],
 
   ### old
   [ 'OPT', 'CHK', "$INT/Pictures/Screenshots",                         "screenshots-pix" ],
