@@ -9,50 +9,50 @@ my $ipmagicName = "s5";
 my $SD_FAT_UUID = "6BD5-7233";
 my $SNAP_APP_DIR = "Android/data/org.lineageos.snap/files";
 
-my $localDir = "$ENV{HOME}/Code/s5/backup/DCIM";
+my $LOCAL_DCIM = "$ENV{HOME}/Code/s5/backup/DCIM";
 
 my $INT = "/sdcard";
 my $EXT = "/storage/$SD_FAT_UUID";
 
 my @backups = (
   ### main camera dirs
-  [ 'REQ', $localDir, "$INT/DCIM/Camera",                       "int-cam" ],
-  [ 'OPT', $localDir, "$INT/DCIM/OpenCamera",                   "int-opencam" ],
-  [ 'REQ', $localDir, "$EXT/DCIM/Camera",                       "sd-cam" ],
-  [ 'REQ', $localDir, "$EXT/DCIM/OpenCamera",                   "sd-opencam" ],
+  [ 'REQ', "$INT/DCIM/Camera",                                  "int-cam" ],
+  [ 'OPT', "$INT/DCIM/OpenCamera",                              "int-opencam" ],
+  [ 'REQ', "$EXT/DCIM/Camera",                                  "sd-cam" ],
+  [ 'REQ', "$EXT/DCIM/OpenCamera",                              "sd-opencam" ],
 
   ### other apps
-  [ 'OPT', $localDir, "$INT/DCIM/Screenshots",                  "screenshots" ],
-  [ 'OPT', $localDir, "$INT/DCIM/Facebook",                     "int-fb" ],
-  [ 'OPT', $localDir, "$INT/Pictures/Facebook",                 "int-fb2" ],
-  [ 'OPT', $localDir, "$EXT/Pictures/Facebook",                 "sd-fb2" ],
-  [ 'OPT', $localDir, "$INT/Pictures/Messenger",                "int-fbmsg" ],
-  [ 'OPT', $localDir, "$EXT/Pictures/Messenger",                "sd-fbmsg" ],
-  [ 'OPT', $localDir, "$EXT/Pictures/Messages",                 "sd-msgs" ],
-  [ 'OPT', $localDir, "$EXT/Pictures",                          "sd-pix" ],
-  [ 'OPT', $localDir, "$INT/Movies/Messenger",                  "int-fbmsgmov" ],
-  [ 'OPT', $localDir, "$EXT/Movies/Messenger",                  "sd-fbmsgmov" ],
+  [ 'OPT', "$INT/DCIM/Screenshots",                             "screenshots" ],
+  [ 'OPT', "$INT/DCIM/Facebook",                                "int-fb" ],
+  [ 'OPT', "$INT/Pictures/Facebook",                            "int-fb2" ],
+  [ 'OPT', "$EXT/Pictures/Facebook",                            "sd-fb2" ],
+  [ 'OPT', "$INT/Pictures/Messenger",                           "int-fbmsg" ],
+  [ 'OPT', "$EXT/Pictures/Messenger",                           "sd-fbmsg" ],
+  [ 'OPT', "$EXT/Pictures/Messages",                            "sd-msgs" ],
+  [ 'OPT', "$EXT/Pictures",                                     "sd-pix" ],
+  [ 'OPT', "$INT/Movies/Messenger",                             "int-fbmsgmov" ],
+  [ 'OPT', "$EXT/Movies/Messenger",                             "sd-fbmsgmov" ],
 
   ### top level dirs
-  [ 'OPT', $localDir, "$INT/Pictures",                          "int-pix" ],
-  [ 'OPT', $localDir, "$EXT/Pictures",                          "sd-pix" ],
-  [ 'OPT', $localDir, "$INT/Movies",                            "int-mov" ],
-  [ 'OPT', $localDir, "$EXT/Movies",                            "sd-mov" ],
+  [ 'OPT', "$INT/Pictures",                                     "int-pix" ],
+  [ 'OPT', "$EXT/Pictures",                                     "sd-pix" ],
+  [ 'OPT', "$INT/Movies",                                       "int-mov" ],
+  [ 'OPT', "$EXT/Movies",                                       "sd-mov" ],
 
   ### old
-  [ 'OPT', $localDir, "$INT/Pictures/Screenshots",              "screenshots-pix" ],
-  [ 'OPT', $localDir, "$EXT/Pictures/Screenshots",              "sd-screenshots-pix" ],
-  [ 'OPT', $localDir, "$INT/Movies/Screencasts",                "screencasts" ],
-  [ 'OPT', $localDir, "$EXT/Movies/Screencasts",                "sd-screencasts" ],
-  [ 'OPT', $localDir, "$INT/DCIM/XPERIA/HIGHLIGHT_MOVIE",       "xperia-highlight" ],
+  [ 'OPT', "$INT/Pictures/Screenshots",                         "screenshots-pix" ],
+  [ 'OPT', "$EXT/Pictures/Screenshots",                         "sd-screenshots-pix" ],
+  [ 'OPT', "$INT/Movies/Screencasts",                           "screencasts" ],
+  [ 'OPT', "$EXT/Movies/Screencasts",                           "sd-screencasts" ],
+  [ 'OPT', "$INT/DCIM/XPERIA/HIGHLIGHT_MOVIE",                  "xperia-highlight" ],
 
   ### ancient
-  [ 'OPT', $localDir, "$INT/$SNAP_APP_DIR",                     "int-snap" ],
-  [ 'OPT', $localDir, "$EXT/$SNAP_APP_DIR",                     "sd-snap" ],
+  [ 'OPT', "$INT/$SNAP_APP_DIR",                                "int-snap" ],
+  [ 'OPT', "$EXT/$SNAP_APP_DIR",                                "sd-snap" ],
 
   ### weird
-  [ 'OPT', $localDir, "$INT/DCIM/100ANDRO",                     "int-andro" ],
-  [ 'OPT', $localDir, "$EXT/DCIM/100ANDRO",                     "sd-andro" ],
+  [ 'OPT', "$INT/DCIM/100ANDRO",                                "int-andro" ],
+  [ 'OPT', "$EXT/DCIM/100ANDRO",                                "sd-andro" ],
 );
 my $remoteTmpDir = "/storage/$SD_FAT_UUID/dcim-tmp";
 my $localTmpDir = "$ENV{HOME}/dcim-tmp";
@@ -76,12 +76,12 @@ sub remoteDirExists($;$);
 
 sub main(@){
   for my $backup(@backups){
-    my ($reqType, $localDCIM, $remoteDCIM, $backupSuffix) = @$backup;
-    dcimBackup($reqType, $localDCIM, $remoteDCIM, $backupSuffix);
+    my ($reqType, $remoteDCIM, $backupSuffix) = @$backup;
+    dcimBackup($reqType, $LOCAL_DCIM, $remoteDCIM, $backupSuffix);
   }
   for my $backup(@backups){
-    my ($reqType, $localDCIM, $remoteDCIM, $backupSuffix) = @$backup;
-    checkMissing($localDCIM, $remoteDCIM);
+    my ($reqType, $remoteDCIM, $backupSuffix) = @$backup;
+    checkMissing($LOCAL_DCIM, $remoteDCIM);
   }
 }
 
