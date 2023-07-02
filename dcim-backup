@@ -21,37 +21,39 @@ my @backups = (
   [ 'REQ', 'CHK', "$EXT/DCIM/Camera",                                  "sd-cam" ],
   [ 'REQ', 'CHK', "$EXT/DCIM/OpenCamera",                              "sd-opencam" ],
 
-  ### other apps
+  ### old camera dirs
+  [ 'OPT', 'CHK', "$INT/DCIM/100ANDRO",                                "int-andro" ],
+  [ 'OPT', 'CHK', "$EXT/DCIM/100ANDRO",                                "sd-andro" ],
+
+  ### lineageos camera dirs
+  [ 'OPT', 'CHK', "$INT/$SNAP_APP_DIR",                                "int-snap" ],
+  [ 'OPT', 'CHK', "$EXT/$SNAP_APP_DIR",                                "sd-snap" ],
+
+  ### screenshots
   [ 'OPT', 'CHK', "$INT/DCIM/Screenshots",                             "screenshots" ],
+  [ 'OPT', 'CHK', "$INT/Pictures/Screenshots",                         "screenshots-pix" ],
+  [ 'OPT', 'CHK', "$EXT/Pictures/Screenshots",                         "sd-screenshots-pix" ],
+  [ 'OPT', 'CHK', "$INT/Movies/Screencasts",                           "screencasts" ],
+  [ 'OPT', 'CHK', "$EXT/Movies/Screencasts",                           "sd-screencasts" ],
+
+  ### facebook
   [ 'OPT', 'CHK', "$INT/DCIM/Facebook",                                "int-fb" ],
   [ 'OPT', 'CHK', "$INT/Pictures/Facebook",                            "int-fb2" ],
   [ 'OPT', 'CHK', "$EXT/Pictures/Facebook",                            "sd-fb2" ],
   [ 'OPT', 'CHK', "$INT/Pictures/Messenger",                           "int-fbmsg" ],
   [ 'OPT', 'CHK', "$EXT/Pictures/Messenger",                           "sd-fbmsg" ],
-  [ 'OPT', 'CHK', "$EXT/Pictures/Messages",                            "sd-msgs" ],
   [ 'OPT', 'CHK', "$INT/Movies/Messenger",                             "int-fbmsgmov" ],
   [ 'OPT', 'CHK', "$EXT/Movies/Messenger",                             "sd-fbmsgmov" ],
+
+  ### other apps
+  [ 'OPT', 'CHK', "$EXT/Pictures/Messages",                            "sd-msgs" ],
+  [ 'OPT', 'CHK', "$INT/DCIM/XPERIA/HIGHLIGHT_MOVIE",                  "xperia-highlight" ],
 
   ### top level dirs
   [ 'OPT', 'SKP', "$INT/Pictures",                                     "int-pix" ],
   [ 'OPT', 'SKP', "$EXT/Pictures",                                     "sd-pix" ],
   [ 'OPT', 'SKP', "$INT/Movies",                                       "int-mov" ],
   [ 'OPT', 'SKP', "$EXT/Movies",                                       "sd-mov" ],
-
-  ### old
-  [ 'OPT', 'CHK', "$INT/Pictures/Screenshots",                         "screenshots-pix" ],
-  [ 'OPT', 'CHK', "$EXT/Pictures/Screenshots",                         "sd-screenshots-pix" ],
-  [ 'OPT', 'CHK', "$INT/Movies/Screencasts",                           "screencasts" ],
-  [ 'OPT', 'CHK', "$EXT/Movies/Screencasts",                           "sd-screencasts" ],
-  [ 'OPT', 'CHK', "$INT/DCIM/XPERIA/HIGHLIGHT_MOVIE",                  "xperia-highlight" ],
-
-  ### ancient
-  [ 'OPT', 'CHK', "$INT/$SNAP_APP_DIR",                                "int-snap" ],
-  [ 'OPT', 'CHK', "$EXT/$SNAP_APP_DIR",                                "sd-snap" ],
-
-  ### weird
-  [ 'OPT', 'CHK', "$INT/DCIM/100ANDRO",                                "int-andro" ],
-  [ 'OPT', 'CHK', "$EXT/DCIM/100ANDRO",                                "sd-andro" ],
 );
 my $remoteTmpDir = "/storage/$SD_FAT_UUID/dcim-tmp";
 my $localTmpDir = "$ENV{HOME}/dcim-tmp";
