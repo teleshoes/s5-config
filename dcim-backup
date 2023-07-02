@@ -57,7 +57,7 @@ my @backups = (
 my $remoteTmpDir = "/storage/$SD_FAT_UUID/dcim-tmp";
 my $localTmpDir = "$ENV{HOME}/dcim-tmp";
 
-my @filetypes = qw(jpg jpeg png gif mp4);
+my @filetypes = qw(jpg jpeg png gif mp4 webp);
 
 sub dcimBackup($$$$);
 sub reorganizeBackedUpRemotes($$$$$);
