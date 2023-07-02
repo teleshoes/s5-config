@@ -46,8 +46,8 @@ my @backups = (
   [ 'OPT', 'SKP', "$EXT/Movies/Messenger",                             "sd-fbmsgmov" ],
 
   ### other apps
-  [ 'OPT', 'CHK', "$EXT/Pictures/Messages",                            "sd-msgs" ],
-  [ 'OPT', 'CHK', "$INT/DCIM/XPERIA/HIGHLIGHT_MOVIE",                  "xperia-highlight" ],
+  [ 'OPT', 'SKP', "$EXT/Pictures/Messages",                            "sd-msgs" ],
+  [ 'OPT', 'SKP', "$INT/DCIM/XPERIA/HIGHLIGHT_MOVIE",                  "xperia-highlight" ],
 
   ### top level dirs
   [ 'OPT', 'SKP', "$INT/Pictures",                                     "int-pix" ],
