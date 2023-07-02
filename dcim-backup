@@ -29,6 +29,12 @@ my @backups = (
   [ 'OPT', $localDir, "/sdcard/Movies/Messenger",               "int-fbmsgmov" ],
   [ 'OPT', $localDir, "/storage/$SD_FAT_UUID/Movies/Messenger", "sd-fbmsgmov" ],
 
+  ### top level dirs
+  [ 'OPT', $localDir, "/sdcard/Pictures",                       "int-pix" ],
+  [ 'OPT', $localDir, "/storage/$SD_FAT_UUID/Pictures",         "sd-pix" ],
+  [ 'OPT', $localDir, "/sdcard/Movies",                         "int-mov" ],
+  [ 'OPT', $localDir, "/storage/$SD_FAT_UUID/Movies",           "sd-mov" ],
+
   ### old
   [ 'OPT', $localDir, "/sdcard/Pictures/Screenshots",           "screenshots-pix" ],
   [ 'OPT', $localDir, "/storage/$SD_FAT_UUID/Pictures/Screenshots","sd-screenshots-pix" ],
